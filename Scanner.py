@@ -2,6 +2,10 @@ import ply.lex as lex
 from ply.lex import TOKEN
 
 
+states = (
+    ('comment','exclusive'),
+)
+
 reserved = {
 
     'and' : 'and',
@@ -25,8 +29,6 @@ reserved = {
     'string' : 'string'
 
 }
-
-
 
 #list of all token names
 
@@ -67,7 +69,7 @@ tokens = [
 
 t_lowercase_letter = r'([a-z])'
 t_uppercase_letter = r'([A-Z])'
-t_letter = t_lowercase_letter + r'|' + t_uppercase_letter 
+t_letter = t_lowercase_letter + r'|' + t_uppercase_letter
 t_bin_digit = r'([0-1])'
 t_digit = t_bin_digit + r'|[2-9]'
 t_hex_digit = t_digit+r'|[A-Fa-f]'
@@ -96,13 +98,50 @@ t_assign = r'\<-'
 #Regular expression for @TOKEN
 basetendigit = r'('+ t_digit + r'('+t_digit+r')*)'
 basesixteendigit =r'(('+t_hex_digit+r')('+t_hex_digit+r')*)'
-integer_literal =  r'0x'+ basesixteendigit +r'|'+ basetendigit 
+integer_literal =  r'0x'+ basesixteendigit +r'|'+ basetendigit
 object_identifier = t_lowercase_letter+r'('+t_letter+r'|'+t_digit+r'| _ )*'
 
 
-#Regular expression function rules tokens 
+#Regular expression function rules tokens
 #WARNING All tokens defined by functions are added in the same order as they appear in the lexer file.
 #So longer expression first !
+
+# COMMENTS
+
+nb_comments = 0
+@TOKEN(r'//.*')
+def t_SINGLE_LINE_COMMENT(t):
+    pass
+
+@TOKEN(r'\(\*')
+def t_OPEN_COMMENT(t):
+    global nb_comments
+    nb_comments = 1
+    t.lexer.begin('comment')
+
+@TOKEN(r'\(\*')
+def t_comment_OPEN_COMMENT(t):
+    global nb_comments
+    nb_comments = nb_comments + 1
+    pass
+
+@TOKEN(r'\*\)')
+def t_comment_CLOSE_COMMENT(t):
+    global nb_comments
+    if nb_comments > 1:
+        nb_comments = nb_comments - 1
+    else:
+        t.lexer.begin('INITIAL')
+
+@TOKEN(r'.')
+def t_comment_ELSE(t):
+    pass
+
+@TOKEN(r'\*\)')
+def t_CLOSE_COMMENT(t):
+    raise LexError('error', token=t)
+
+
 
 @TOKEN(object_identifier)
 def t_object_identifier(t):
@@ -118,21 +157,26 @@ def t_integer_literal(t):
     return t
 
 def t_newline(t):
-     r'\t+'
+     r'\n'
      t.lexer.lineno += len(t.value)
 
+def t_comment_newline(t):
+    r'\n'
+    t.lexer.lineno += len(t.value)
 
-
-
-t_ignore  = ' '
+t_ignore  = ' \t\r\f'
+t_comment_ignore = ''
 
 def t_error(t):
     print("oups")
     t.lexer.skip(1)
 
+def t_comment_error(t):
+    return t_error(t)
+
 lexer = lex.lex()
 
-lexer.input("0x3f 25 A_6 and a_6 ando a6 int32")
+lexer.input(".=<<=<-(*(*a*)b*)=\n")
 
 while True:
     tok = lexer.token()
