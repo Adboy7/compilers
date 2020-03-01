@@ -76,6 +76,9 @@ def main(argv):
         print_error(errors,f)
         print_token(tokens)
 
+        if errors:
+            exit(1)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
