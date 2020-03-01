@@ -65,7 +65,7 @@ def main(argv):
         # well... no other option for the moment so go lexer i choose you
         lexer = VsopLexer()
         tokens = lexer.tokenize(input)
-        output(tokens)
+        print_token(tokens)
         # for t in tokens:
         #     output(t)
             #print(t.lineno,",",t.column,",",t.type,",",t.value)
