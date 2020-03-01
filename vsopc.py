@@ -21,6 +21,20 @@ class Style:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+def output(tokens):
+    for t in tokens:
+        if(t.type == "type_identifier"):
+            print(t.lineno,",",t.column,",type-identifier,",t.value,sep='')
+        elif(t.type == "object_identifier"):
+            print(t.lineno,",",t.column,",object-identifier,",t.value,sep='')
+        elif(t.type == "integer_literal"):
+            print(t.lineno,",",t.column,",integer-literal,",t.value,sep='')
+        elif(t.type == "string_literal"):
+            print(t.lineno,",",t.column,",string-literal,",repr(t.value),sep='')
+        else:
+            print(t.lineno,",",t.column,",",t.type,sep='')
+
+
 def main(argv):
     phase = 0
     files = []
@@ -51,8 +65,10 @@ def main(argv):
         # well... no other option for the moment so go lexer i choose you
         lexer = VsopLexer()
         tokens = lexer.tokenize(input)
-        for t in tokens:
-            print(t.lineno,",",t.column,",",t.type,",",t.value)
+        output(tokens)
+        # for t in tokens:
+        #     output(t)
+            #print(t.lineno,",",t.column,",",t.type,",",t.value)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
