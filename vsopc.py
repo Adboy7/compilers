@@ -21,18 +21,18 @@ class Style:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-def output(tokens):
+def print_token(tokens):
     for t in tokens:
         if(t.type == "type_identifier"):
-            print(t.lineno,",",t.column,",type-identifier,",t.value,sep='')
+            print(f"{t.lineno},{t.column},type-identifier,{t.value}")
         elif(t.type == "object_identifier"):
-            print(t.lineno,",",t.column,",object-identifier,",t.value,sep='')
+            print(f"{t.lineno},{t.column},object-identifier,{t.value}")
         elif(t.type == "integer_literal"):
-            print(t.lineno,",",t.column,",integer-literal,",t.value,sep='')
+            print(f"{t.lineno},{t.column},integer-literal,{t.value}")
         elif(t.type == "string_literal"):
-            print(t.lineno,",",t.column,",string-literal,",repr(t.value),sep='')
+            print(f"{t.lineno},{t.column},string-literal,{t.value}")
         else:
-            print(t.lineno,",",t.column,",",t.type,sep='')
+            print(f"{t.lineno},{t.column},{t.type}")
 
 
 def main(argv):
