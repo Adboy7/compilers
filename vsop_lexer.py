@@ -115,8 +115,10 @@ class VsopLexer:
     # object_identifier = t_lowercase_letter+r'('+t_letter+r'|'+t_digit+r'| _ )*'
 
     def __init__(self):
+        self.last_lex_pos=-1
         self.comment_level = 0
         self.string = ''
+        self.string_start = 0
         self.lexer = lex.lex(module=self)
 
     def tokenize(self, text):
@@ -125,9 +127,12 @@ class VsopLexer:
         while True:
             tok = self.lexer.token()
             if not tok: break
+            self.find_column(tok)
             tokens.append(tok)
         return tokens
-
+    
+    def find_column(self,token):
+        token.column=token.lexpos - self.last_lex_pos
 
     #Regular expression function rules tokens
     #WARNING All tokens defined by functions are added in the same order as
@@ -157,7 +162,7 @@ class VsopLexer:
     @TOKEN(r'\(\*')
     def t_comment_open_nested(self, t):
         self.comment_level += 1
-        print(f"comment level {self.comment_level}")
+        print("comment level {self.comment_level}")
 
     @TOKEN(r'\*\)')
     def t_comment_close(self, t):
@@ -177,12 +182,15 @@ class VsopLexer:
 ### STRINGS
     @TOKEN(r'"')
     def t_open_string(self, t):
+        self.string_start=t.lexpos
+        print(t.lexpos)
         t.lexer.begin('string')
 
     @TOKEN(r'"')
     def t_string_close(self, t):
         t.type = 'string_literal'
         t.value = self.string
+        t.lexpos = self.string_start
         t.lexer.begin('INITIAL')
         return t
 
@@ -193,6 +201,7 @@ class VsopLexer:
 
     @TOKEN(r'\\\n\ *')
     def t_string_break(self, t):
+        t.lexer.lineno += 1
         pass
 
     @TOKEN(r'\\x' + hex_digit + hex_digit)
@@ -238,6 +247,7 @@ class VsopLexer:
 ### LINE FEED
     def t_newline(self, t):
         r'\n'
+        self.last_lex_pos=t.lexpos
         t.lexer.lineno += len(t.value)
 
     def t_string_newline(self, t):
@@ -249,7 +259,8 @@ class VsopLexer:
         r'\n'
         t.lexer.lineno += len(t.value)
 
-
+    
+    
 ### IGNORED CHARS
     t_ignore  = ' \t\r\f'
     t_comment_ignore = ''
@@ -267,6 +278,7 @@ class VsopLexer:
     def t_string_error(self, t):
         return self.t_error(t)
 
+    
 
 
 ###############################
@@ -274,9 +286,14 @@ class VsopLexer:
 ###############################
 
 # lexer = VsopLexer()
-# # tokens = lexer.tokenize(".=<<=<-(*(*a*)b*)=\r\nc")
-# # tokens = lexer.tokenize("0x3f 0b1111 25 A_6 and a_6 ando a6 int32")
-# tokens = lexer.tokenize("0x3f 0b1111 0b1053 A_6 and a_6 ando a6 int32")
-# # tokens = lexer.tokenize('"hel\\\n  lo \x42"')
+#   #tokens = lexer.tokenize(".=<<=<-(*(*a*)b*)=\r\nc")
+#  # tokens = lexer.tokenize("0x3f 0b1111 25 A_6 and a_6 ando a6 int32")
+# input = "0xpp 0b1111 0b1053 \n           A_6 and a_6 \n ando a 6 int32"
+# tokens = lexer.tokenize(input)
+#  # tokens = lexer.tokenize('"hel\\\n  lo \x42"')
+
+
 # for t in tokens:
 #     print(t)
+#     print(t.column)
+    

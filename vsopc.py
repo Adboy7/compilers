@@ -51,9 +51,8 @@ def main(argv):
         # well... no other option for the moment so go lexer i choose you
         lexer = VsopLexer()
         tokens = lexer.tokenize(input)
-
         for t in tokens:
-            print(t)
+            print(t.lineno,",",t.column,",",t.type,",",t.value)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
