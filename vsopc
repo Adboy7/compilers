@@ -31,6 +31,8 @@ def print_token(tokens):
             print(f"{t.lineno},{t.column},integer-literal,{t.value}")
         elif(t.type == "string_literal"):
             print(f"{t.lineno},{t.column},string-literal,{t.value}")
+        elif(t.type == "lower_equal"):
+            print(f"{t.lineno},{t.column},lower-equal,{t.value}")
         else:
             print(f"{t.lineno},{t.column},{t.type}")
 
@@ -73,7 +75,7 @@ def main(argv):
         tokens,errors = lexer.tokenize(input)
         print_error(errors,f)
         print_token(tokens)
-       
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
