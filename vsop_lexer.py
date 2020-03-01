@@ -118,7 +118,9 @@ class VsopLexer:
         self.last_lex_pos=-1
         self.comment_level = 0
         self.string = ''
-        self.string_start = 0
+        self.string_lexpos = 0
+        self.string_lineno = 0
+        self.string_column = 0
         self.lexer = lex.lex(module=self)
 
     def tokenize(self, text):
@@ -127,12 +129,13 @@ class VsopLexer:
         while True:
             tok = self.lexer.token()
             if not tok: break
-            self.find_column(tok)
+            if not hasattr(tok, 'column'):
+                tok.column = self.find_column(tok)
             tokens.append(tok)
         return tokens
-    
-    def find_column(self,token):
-        token.column=token.lexpos - self.last_lex_pos
+
+    def find_column(self, token):
+        return token.lexpos - self.last_lex_pos
 
     #Regular expression function rules tokens
     #WARNING All tokens defined by functions are added in the same order as
@@ -162,7 +165,6 @@ class VsopLexer:
     @TOKEN(r'\(\*')
     def t_comment_open_nested(self, t):
         self.comment_level += 1
-        print("comment level {self.comment_level}")
 
     @TOKEN(r'\*\)')
     def t_comment_close(self, t):
@@ -182,15 +184,18 @@ class VsopLexer:
 ### STRINGS
     @TOKEN(r'"')
     def t_open_string(self, t):
-        self.string_start=t.lexpos
-        print(t.lexpos)
+        self.string_lexpos = t.lexpos
+        self.string_lineno = t.lineno
+        self.string_column = self.find_column(t)
         t.lexer.begin('string')
 
     @TOKEN(r'"')
     def t_string_close(self, t):
         t.type = 'string_literal'
         t.value = self.string
-        t.lexpos = self.string_start
+        t.lexpos = self.string_lexpos
+        t.lineno = self.string_lineno
+        t.column = self.string_column
         t.lexer.begin('INITIAL')
         return t
 
@@ -201,8 +206,8 @@ class VsopLexer:
 
     @TOKEN(r'\\\n\ *')
     def t_string_break(self, t):
+        self.last_lex_pos = t.lexpos
         t.lexer.lineno += 1
-        pass
 
     @TOKEN(r'\\x' + hex_digit + hex_digit)
     def t_string_hex(self, t):
@@ -247,20 +252,22 @@ class VsopLexer:
 ### LINE FEED
     def t_newline(self, t):
         r'\n'
-        self.last_lex_pos=t.lexpos
-        t.lexer.lineno += len(t.value)
+        self.last_lex_pos = t.lexpos
+        t.lexer.lineno += 1
 
     def t_string_newline(self, t):
         r'\n'
-        print("meh error?")
-        t.lexer.lineno += len(t.value)
+        self.last_lex_pos = t.lexpos
+        t.lexer.lineno += 1
+        # raise error
 
     def t_comment_newline(self, t):
         r'\n'
-        t.lexer.lineno += len(t.value)
+        self.last_lex_pos = t.lexpos
+        t.lexer.lineno += 1
 
-    
-    
+
+
 ### IGNORED CHARS
     t_ignore  = ' \t\r\f'
     t_comment_ignore = ''
@@ -278,7 +285,7 @@ class VsopLexer:
     def t_string_error(self, t):
         return self.t_error(t)
 
-    
+
 
 
 ###############################
@@ -296,4 +303,3 @@ class VsopLexer:
 # for t in tokens:
 #     print(t)
 #     print(t.column)
-    
