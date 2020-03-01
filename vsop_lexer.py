@@ -116,12 +116,12 @@ class VsopLexer:
 
 
     def __init__(self):
-        self.last_lex_pos=-1
+        self.last_lf_lexpos = -1
         self.comment_level = 0
         self.string = ''
-        self.string_lexpos = 0
-        self.string_lineno = 0
-        self.string_column = 0
+        self.last_lexpos = 0
+        self.last_lineno = 0
+        self.last_column = 0
         self.eof_reached = False
         self.lexer = lex.lex(module=self)
 
@@ -138,12 +138,13 @@ class VsopLexer:
                 tokens.append(tok)
             except LexicalError as le:
                 errors.append(le)
+                print("shit")
             if self.eof_reached:
                 break
         return tokens, errors
 
     def find_column(self, token):
-        return token.lexpos - self.last_lex_pos
+        return token.lexpos - self.last_lf_lexpos
 
     #Regular expression function rules tokens
     #WARNING All tokens defined by functions are added in the same order as
@@ -168,6 +169,9 @@ class VsopLexer:
     @TOKEN(r'\(\*')
     def t_open_comment(self, t):
         self.comment_level = 1
+        self.last_lexpos = t.lexpos
+        self.last_lineno = t.lineno
+        self.last_column = self.find_column(t)
         t.lexer.begin('comment')
 
     @TOKEN(r'\(\*')
@@ -193,18 +197,18 @@ class VsopLexer:
 ### STRINGS
     @TOKEN(r'"')
     def t_open_string(self, t):
-        self.string_lexpos = t.lexpos
-        self.string_lineno = t.lineno
-        self.string_column = self.find_column(t)
+        self.last_lexpos = t.lexpos
+        self.last_lineno = t.lineno
+        self.last_column = self.find_column(t)
         t.lexer.begin('string')
 
     @TOKEN(r'"')
     def t_string_close(self, t):
         t.type = 'string_literal'
         t.value = self.string
-        t.lexpos = self.string_lexpos
-        t.lineno = self.string_lineno
-        t.column = self.string_column
+        t.lexpos = self.last_lexpos
+        t.lineno = self.last_lineno
+        t.column = self.last_column
         t.lexer.begin('INITIAL')
         return t
 
@@ -214,7 +218,7 @@ class VsopLexer:
 
     @TOKEN(r'\\\n\ *')
     def t_string_break(self, t):
-        self.last_lex_pos = t.lexpos + 1
+        self.last_lf_lexpos = t.lexpos + 1
         t.lexer.lineno += 1
 
     @TOKEN(r'\\x' + hex_digit + hex_digit)
@@ -265,18 +269,21 @@ class VsopLexer:
 ### LINE FEED
     def t_newline(self, t):
         r'\n'
-        self.last_lex_pos = t.lexpos
+        self.last_lf_lexpos = t.lexpos
         t.lexer.lineno += 1
 
     def t_string_newline(self, t):
         r'\n'
-        self.last_lex_pos = t.lexpos
+        line = t.lexer.lineno
+        column = self.find_column(t)
+        self.last_lf_lexpos = t.lexpos
         t.lexer.lineno += 1
-        # raise error
+        raise LexicalError(line, column,
+            "Invalid raw line feed in string literal")
 
     def t_comment_newline(self, t):
         r'\n'
-        self.last_lex_pos = t.lexpos
+        self.last_lf_lexpos = t.lexpos
         t.lexer.lineno += 1
 
 ### EOF
@@ -285,12 +292,12 @@ class VsopLexer:
 
     def t_string_eof(self, t):
         self.eof_reached = True
-        raise LexicalError(self.string_lineno, self.string_column,
+        raise LexicalError(self.last_lineno, self.last_column,
             "EOF reached in string literal")
 
     def t_comment_eof(self, t):
         self.eof_reached = True
-        raise LexicalError(0, 0,
+        raise LexicalError(self.last_lineno, self.last_column,
             "EOF reached in comment")
 
 ### IGNORED CHARS
