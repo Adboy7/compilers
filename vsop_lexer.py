@@ -122,6 +122,7 @@ class VsopLexer:
         self.string_lexpos = 0
         self.string_lineno = 0
         self.string_column = 0
+        self.eof_reached = False
         self.lexer = lex.lex(module=self)
 
     def tokenize(self, text):
@@ -138,6 +139,8 @@ class VsopLexer:
             except LexicalError as le:
                 errors.append(le)
                 print("shit")
+            if self.eof_reached:
+                break
         return tokens, errors
 
     def find_column(self, token):
@@ -282,10 +285,12 @@ class VsopLexer:
         return None
 
     def t_string_eof(self, t):
+        self.eof_reached = True
         raise LexicalError(self.string_lineno, self.string_column,
             "EOF reached in string literal")
 
     def t_comment_eof(self, t):
+        self.eof_reached = True
         raise LexicalError(0, 0,
             "EOF reached in comment")
 
