@@ -261,9 +261,14 @@ class VsopLexer:
     #             "Invalid integer literal")
     #     return t
 
-    @TOKEN(digit + r'+')
+    @TOKEN(alphanum + r'+')
     def t_integer_literal(self, t):
-        t.value = int(t.value)
+        t.type = 'integer_literal'
+        try:
+            t.value = int(t.value)
+        except ValueError:
+            raise LexicalError(t.lineno, self.find_column(t),
+                "Invalid integer literal")
         return t
 
 
