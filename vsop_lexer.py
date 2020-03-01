@@ -206,7 +206,7 @@ class VsopLexer:
 
     @TOKEN(r'\\\n\ *')
     def t_string_break(self, t):
-        self.last_lex_pos = t.lexpos
+        self.last_lex_pos = t.lexpos + 1
         t.lexer.lineno += 1
 
     @TOKEN(r'\\x' + hex_digit + hex_digit)
