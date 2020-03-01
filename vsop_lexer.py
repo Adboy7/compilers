@@ -197,6 +197,7 @@ class VsopLexer:
 ### STRINGS
     @TOKEN(r'"')
     def t_open_string(self, t):
+        self.string = ''
         self.last_lexpos = t.lexpos
         self.last_lineno = t.lineno
         self.last_column = self.find_column(t)
