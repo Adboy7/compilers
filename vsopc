@@ -32,7 +32,7 @@ def print_token(tokens):
         elif(t.type == "string_literal"):
             print(f"{t.lineno},{t.column},string-literal,{t.value}")
         elif(t.type == "lower_equal"):
-            print(f"{t.lineno},{t.column},lower-equal,{t.value}")
+            print(f"{t.lineno},{t.column},lower-equal")
         else:
             print(f"{t.lineno},{t.column},{t.type}")
 
