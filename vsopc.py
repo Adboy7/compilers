@@ -34,6 +34,12 @@ def print_token(tokens):
         else:
             print(f"{t.lineno},{t.column},{t.type}")
 
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+def print_error(errors,f):
+    for er in errors:
+        eprint(f,":",er.line,":",er.column,": lexical error:",er.description,sep="")
 
 def main(argv):
     phase = 0
@@ -64,11 +70,10 @@ def main(argv):
 
         # well... no other option for the moment so go lexer i choose you
         lexer = VsopLexer()
-        tokens = lexer.tokenize(input)
+        tokens,errors = lexer.tokenize(input)
+        print_error(errors,f)
         print_token(tokens)
-        # for t in tokens:
-        #     output(t)
-            #print(t.lineno,",",t.column,",",t.type,",",t.value)
+       
 
 if __name__ == "__main__":
     main(sys.argv[1:])
