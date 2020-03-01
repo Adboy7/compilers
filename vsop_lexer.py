@@ -138,7 +138,6 @@ class VsopLexer:
                 tokens.append(tok)
             except LexicalError as le:
                 errors.append(le)
-                print("shit")
             if self.eof_reached:
                 break
         return tokens, errors
