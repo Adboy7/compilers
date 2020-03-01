@@ -28,7 +28,7 @@ class VsopLexer:
     )
 
     escape_char = {
-       'b'  : '\\x0b',
+       'b'  : '\\x08',
        't'  : '\\x09',
        'n'  : '\\x0a',
        'r'  : '\\x0d',
