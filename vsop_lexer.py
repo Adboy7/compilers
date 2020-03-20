@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# vsop_lex.py
+# vsop_lexer.py
 #
 # VSOP Lexer
 #
@@ -117,7 +117,7 @@ class VsopLexer:
 
     def __init__(self):
         self.last_lf_lexpos = -1
-        self.comment_level = 0
+        self.comment_level = []
         self.string = ''
         self.last_lexpos = 0
         self.last_lineno = 0
@@ -167,20 +167,21 @@ class VsopLexer:
 
     @TOKEN(r'\(\*')
     def t_open_comment(self, t):
-        self.comment_level = 1
-        self.last_lexpos = t.lexpos
-        self.last_lineno = t.lineno
-        self.last_column = self.find_column(t)
+        self.comment_level = [(t.lineno,  self.find_column(t), t.lexpos)]
+        # self.last_lexpos = t.lexpos
+        # self.last_lineno = t.lineno
+        # self.last_column = self.find_column(t)
         t.lexer.begin('comment')
 
     @TOKEN(r'\(\*')
     def t_comment_open_nested(self, t):
-        self.comment_level += 1
+        self.comment_level.append((t.lineno,  self.find_column(t), t.lexpos))
 
     @TOKEN(r'\*\)')
     def t_comment_close(self, t):
-        self.comment_level -= 1
-        if self.comment_level < 1:
+        if len(self.comment_level) > 1:
+            del self.comment_level[-1]
+        else:
             t.lexer.begin('INITIAL')
 
     @TOKEN(r'.')
@@ -303,7 +304,7 @@ class VsopLexer:
 
     def t_comment_eof(self, t):
         self.eof_reached = True
-        raise LexicalError(self.last_lineno, self.last_column,
+        raise LexicalError(self.comment_level[-1][0], self.comment_level[-1][1],
             "EOF reached in comment")
 
 ### IGNORED CHARS
