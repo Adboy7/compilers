@@ -16,16 +16,19 @@
 #
 # -----------------------------------------------------------------------------
 __author__  = "Adrien and Kevin"
-__version__ = '1.1'
+__version__ = '2.0'
 
 import ply.lex as lex
 from ply.lex import TOKEN
 
-class LexicalError(Exception):
+class LexicalError():
   def __init__(self, line, column, description):
     self.line = line
     self.column = column
     self.description = description
+  
+  def __str__(self):
+    return f"{self.line}:{self.column}: lexical error: {self.description}"
 
 class VsopLexer():
   states = (
@@ -122,7 +125,6 @@ class VsopLexer():
 
 
   def __init__(self):
-    # self.tokens = []
     self.errors = []
     self.last_lf_lexpos = -1
     self.comment_level = []
@@ -130,35 +132,17 @@ class VsopLexer():
     self.last_lexpos = 0
     self.last_lineno = 0
     self.last_column = 0
-    self.eof_reached = False
     self.lexer = lex.lex(module=self)
-
-    # def input(self, text):
-    #     self.lexer.input(text)
-
-    # def token(self):
-    #     while True:
-    #         try:
-    #             t = self.lexer.token()
-    #             break
-    #         except LexicalError as le:
-    #             self.errors.append(le)
-    #     return t
 
   def tokenize(self, text):
     tokens = []
     self.lexer.input(text)
     while True:
-      try:
-        tok = self.lexer.token()
-        if not tok: break
-        if not hasattr(tok, 'column'):
-          tok.column = self.find_column(tok)
-        tokens.append(tok)
-      except LexicalError as le:
-        self.errors.append(le)
-      if self.eof_reached:
-        break
+      tok = self.lexer.token()
+      if not tok: break
+      if not hasattr(tok, 'column'):
+        tok.column = self.find_column(tok)
+      tokens.append(tok)
     return tokens, self.errors
 
   def find_column(self, token):
@@ -178,6 +162,7 @@ class VsopLexer():
   def t_object_identifier(self, t):
     t.type = self.keywords.get(t.value,'object_identifier')
     return t
+
 
 ### COMMENTS
   @TOKEN(r'//.*')
@@ -209,8 +194,8 @@ class VsopLexer():
 
   @TOKEN(r'\*\)')
   def t_close_comment_error(self, t):
-    raise LexicalError(t.lineno, self.find_column(t),
-      "Invalid integer literal")
+    self.errors.append(LexicalError(t.lineno, self.find_column(t),
+      "Comment not closed"))
 
 
 ### STRINGS
@@ -249,11 +234,11 @@ class VsopLexer():
   @TOKEN(r'.')
   def t_string_any(self, t):
     if t.value == '\\':
-      raise LexicalError(t.lineno, self.find_column(t),
-        "Invalid character in string literal")
+      self.errors.append(LexicalError(t.lineno, self.find_column(t),
+        "Invalid character in string literal"))
     elif t.value == '\0':
-      raise LexicalError(t.lineno, self.find_column(t),
-        "Invalid character in string literal")
+      self.errors.append(LexicalError(t.lineno, self.find_column(t),
+        "Invalid character in string literal"))
     elif ord(t.value) < 32 or ord(t.value) > 126:
       self.string += "\\x" + t.value.encode("hex")
     else:
@@ -266,30 +251,31 @@ class VsopLexer():
     t.type = 'integer_literal'
     try:
       t.value = int(t.value[2:], 16)
+      return t
     except ValueError:
-      raise LexicalError(t.lineno, self.find_column(t),
-        "Invalid integer literal")
-    return t
-
-# @TOKEN(r'0b' + alphanum + r'*')
-# def t_bin_integer_literal(self, t):
-#     t.type = 'integer_literal'
-#     try:
-#         t.value = int(t.value[2:], 2)
-#     except ValueError:
-#         raise LexicalError(t.lineno, self.find_column(t),
-#             "Invalid integer literal")
-#     return t
+      self.errors.append(LexicalError(t.lineno, self.find_column(t),
+        "Invalid integer literal"))
+    
+  # @TOKEN(r'0b' + alphanum + r'*')
+  # def t_bin_integer_literal(self, t):
+  #   t.type = 'integer_literal'
+  #   try:
+  #     t.value = int(t.value[2:], 2)
+  #     return t
+  #   except ValueError:
+  #     self.errors.append(LexicalError(t.lineno, self.find_column(t),
+  #           "Invalid integer literal"))
+  
 
   @TOKEN(alphanum + r'+')
   def t_integer_literal(self, t):
     t.type = 'integer_literal'
     try:
       t.value = int(t.value)
+      return t
     except ValueError:
-      raise LexicalError(t.lineno, self.find_column(t),
-          "Invalid integer literal")
-    return t
+      self.errors.append(LexicalError(t.lineno, self.find_column(t),
+          "Invalid integer literal"))  
 
 
 ### LINE FEED
@@ -304,27 +290,29 @@ class VsopLexer():
     column = self.find_column(t)
     self.last_lf_lexpos = t.lexpos
     t.lexer.lineno += 1
-    raise LexicalError(line, column,
-      "Invalid raw line feed in string literal")
+    self.errors.append(LexicalError(line, column,
+      "Invalid raw line feed in string literal"))
 
   def t_comment_newline(self, t):
     r'\n'
     self.last_lf_lexpos = t.lexpos
     t.lexer.lineno += 1
 
+
 ### EOF
   def t_eof(self, t):
     return None
 
   def t_string_eof(self, t):
-    self.eof_reached = True
-    raise LexicalError(self.last_lineno, self.last_column,
-      "EOF reached in string literal")
+    self.errors.append(LexicalError(self.last_lineno, self.last_column,
+      "EOF reached in string literal"))
+    return None
 
   def t_comment_eof(self, t):
-    self.eof_reached = True
-    raise LexicalError(self.comment_level[-1][0], self.comment_level[-1][1],
-      "EOF reached in comment")
+    self.errors.append(LexicalError(self.comment_level[-1][0], self.comment_level[-1][1],
+      "EOF reached in comment"))
+    return None
+
 
 ### IGNORED CHARS
   t_ignore  = ' \t\r\f'
@@ -335,7 +323,7 @@ class VsopLexer():
 ### ERROR RULES
   def t_error(self, t):
     t.lexer.skip(1)
-    raise LexicalError(t.lineno, self.find_column(t), "Invalid character")
+    self.errors.append(LexicalError(t.lineno, self.find_column(t), "Invalid character"))
 
   def t_comment_error(self, t):
     return self.t_error(t)
@@ -343,11 +331,14 @@ class VsopLexer():
   def t_string_error(self, t):
     return self.t_error(t)
 
+
 ### MAIN  
 if __name__ == "__main__":
   import sys
   text = open(sys.argv[1], 'r').read()
   lexer = VsopLexer()
   toks, errors = lexer.tokenize(text)
-  print(errors)
-  print(toks)
+  for e in errors:
+    print(e)
+  for t in toks:
+    print(t)
