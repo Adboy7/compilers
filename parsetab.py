@@ -6,9 +6,9 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = 'and assign bool class colon comma div do dot else eof equal extends false if in int32 integer_literal isnull lbrace let lower lower_equal lpar minus new not object_identifier plus pow rbrace rpar semicolon string string_literal then times true type_identifier unit whileexpression : if expression then expression\n                    | object_identifier\n                    | literal\n                    | object_identifier lpar args rparargs : expression\n            | args comma expressionliteral : integer_literal\n               | string_literal\n               | boolean_literalboolean_literal : true \n                       | falseempty :'
+_lr_signature = 'and assign bool class colon comma div do dot else eof equal extends false if in int32 integer_literal isnull lbrace let lower lower_equal lpar minus new not object_identifier plus pow rbrace rpar semicolon string string_literal then times true type_identifier unit whileformals : formal\n               | formals comma formal\n               | emptyformal : object_identifier colon type_identifierblock : rbrace expression semicolon expression expression : if expression then expression\n                    | if expression then expression else expression\n                    | while expression do expression\n                    | let object_identifier colon type_identifier in expression\n                    | let object_identifier colon type_identifier assign expression in expression\n                    | object_identifier assign expression\n                    | not expression\n                    | expression and expression\n                    | expression equal expression\n                    | expression lower_equal expression\n                    | expression lower expression\n                    | expression plus expression\n                    | expression minus expression\n                    | expression times expression\n                    | expression div expression\n                    | expression pow expression\n                    | minus expression\n                    | isnull expression\n                    | object_identifier lpar args rpar\n                    | new type_identifier\n                    | object_identifier\n                    | literal \n                    | lpar rpar\n                    | lpar expression rpar\n                    | blockargs : expression \n              | args comma expression\n              | emptyliteral : integer_literal\n               | string_literal\n               | boolean_literalboolean_literal : true \n                       | falseempty :'
     
-_lr_action_items = {'if':([0,2,11,12,17,],[2,2,2,2,2,]),'object_identifier':([0,2,11,12,17,],[3,3,3,3,3,]),'integer_literal':([0,2,11,12,17,],[5,5,5,5,5,]),'string_literal':([0,2,11,12,17,],[6,6,6,6,6,]),'true':([0,2,11,12,17,],[8,8,8,8,8,]),'false':([0,2,11,12,17,],[9,9,9,9,9,]),'$end':([1,3,4,5,6,7,8,9,15,16,],[0,-2,-3,-7,-8,-9,-10,-11,-1,-4,]),'then':([3,4,5,6,7,8,9,10,15,16,],[-2,-3,-7,-8,-9,-10,-11,12,-1,-4,]),'rpar':([3,4,5,6,7,8,9,13,14,15,16,18,],[-2,-3,-7,-8,-9,-10,-11,16,-5,-1,-4,-6,]),'comma':([3,4,5,6,7,8,9,13,14,15,16,18,],[-2,-3,-7,-8,-9,-10,-11,17,-5,-1,-4,-6,]),'lpar':([3,],[11,]),}
+_lr_action_items = {'object_identifier':([0,5,],[4,4,]),'comma':([0,1,2,3,7,8,],[-39,5,-1,-3,-2,-4,]),'$end':([0,1,2,3,7,8,],[-39,0,-1,-3,-2,-4,]),'colon':([4,],[6,]),'type_identifier':([6,],[8,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -17,7 +17,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'expression':([0,2,11,12,17,],[1,10,14,15,18,]),'literal':([0,2,11,12,17,],[4,4,4,4,4,]),'boolean_literal':([0,2,11,12,17,],[7,7,7,7,7,]),'args':([11,],[13,]),}
+_lr_goto_items = {'formals':([0,],[1,]),'formal':([0,5,],[2,7,]),'empty':([0,],[3,]),}
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -26,17 +26,44 @@ for _k, _v in _lr_goto_items.items():
        _lr_goto[_x][_k] = _y
 del _lr_goto_items
 _lr_productions = [
-  ("S' -> expression","S'",1,None,None,None),
-  ('expression -> if expression then expression','expression',4,'p_expression','vsop_parser.py',43),
-  ('expression -> object_identifier','expression',1,'p_expression','vsop_parser.py',44),
-  ('expression -> literal','expression',1,'p_expression','vsop_parser.py',45),
-  ('expression -> object_identifier lpar args rpar','expression',4,'p_expression','vsop_parser.py',46),
-  ('args -> expression','args',1,'p_args','vsop_parser.py',55),
-  ('args -> args comma expression','args',3,'p_args','vsop_parser.py',56),
-  ('literal -> integer_literal','literal',1,'p_literal','vsop_parser.py',68),
-  ('literal -> string_literal','literal',1,'p_literal','vsop_parser.py',69),
-  ('literal -> boolean_literal','literal',1,'p_literal','vsop_parser.py',70),
-  ('boolean_literal -> true','boolean_literal',1,'p_boolean_literal','vsop_parser.py',75),
-  ('boolean_literal -> false','boolean_literal',1,'p_boolean_literal','vsop_parser.py',76),
-  ('empty -> <empty>','empty',0,'p_empty','vsop_parser.py',85),
+  ("S' -> formals","S'",1,None,None,None),
+  ('formals -> formal','formals',1,'p_formals','vsop_parser.py',42),
+  ('formals -> formals comma formal','formals',3,'p_formals','vsop_parser.py',43),
+  ('formals -> empty','formals',1,'p_formals','vsop_parser.py',44),
+  ('formal -> object_identifier colon type_identifier','formal',3,'p_formal','vsop_parser.py',47),
+  ('block -> rbrace expression semicolon expression','block',4,'p_block','vsop_parser.py',50),
+  ('expression -> if expression then expression','expression',4,'p_expression','vsop_parser.py',53),
+  ('expression -> if expression then expression else expression','expression',6,'p_expression','vsop_parser.py',54),
+  ('expression -> while expression do expression','expression',4,'p_expression','vsop_parser.py',55),
+  ('expression -> let object_identifier colon type_identifier in expression','expression',6,'p_expression','vsop_parser.py',56),
+  ('expression -> let object_identifier colon type_identifier assign expression in expression','expression',8,'p_expression','vsop_parser.py',57),
+  ('expression -> object_identifier assign expression','expression',3,'p_expression','vsop_parser.py',58),
+  ('expression -> not expression','expression',2,'p_expression','vsop_parser.py',59),
+  ('expression -> expression and expression','expression',3,'p_expression','vsop_parser.py',60),
+  ('expression -> expression equal expression','expression',3,'p_expression','vsop_parser.py',61),
+  ('expression -> expression lower_equal expression','expression',3,'p_expression','vsop_parser.py',62),
+  ('expression -> expression lower expression','expression',3,'p_expression','vsop_parser.py',63),
+  ('expression -> expression plus expression','expression',3,'p_expression','vsop_parser.py',64),
+  ('expression -> expression minus expression','expression',3,'p_expression','vsop_parser.py',65),
+  ('expression -> expression times expression','expression',3,'p_expression','vsop_parser.py',66),
+  ('expression -> expression div expression','expression',3,'p_expression','vsop_parser.py',67),
+  ('expression -> expression pow expression','expression',3,'p_expression','vsop_parser.py',68),
+  ('expression -> minus expression','expression',2,'p_expression','vsop_parser.py',69),
+  ('expression -> isnull expression','expression',2,'p_expression','vsop_parser.py',70),
+  ('expression -> object_identifier lpar args rpar','expression',4,'p_expression','vsop_parser.py',71),
+  ('expression -> new type_identifier','expression',2,'p_expression','vsop_parser.py',72),
+  ('expression -> object_identifier','expression',1,'p_expression','vsop_parser.py',73),
+  ('expression -> literal','expression',1,'p_expression','vsop_parser.py',74),
+  ('expression -> lpar rpar','expression',2,'p_expression','vsop_parser.py',75),
+  ('expression -> lpar expression rpar','expression',3,'p_expression','vsop_parser.py',76),
+  ('expression -> block','expression',1,'p_expression','vsop_parser.py',77),
+  ('args -> expression','args',1,'p_args','vsop_parser.py',85),
+  ('args -> args comma expression','args',3,'p_args','vsop_parser.py',86),
+  ('args -> empty','args',1,'p_args','vsop_parser.py',87),
+  ('literal -> integer_literal','literal',1,'p_literal','vsop_parser.py',96),
+  ('literal -> string_literal','literal',1,'p_literal','vsop_parser.py',97),
+  ('literal -> boolean_literal','literal',1,'p_literal','vsop_parser.py',98),
+  ('boolean_literal -> true','boolean_literal',1,'p_boolean_literal','vsop_parser.py',103),
+  ('boolean_literal -> false','boolean_literal',1,'p_boolean_literal','vsop_parser.py',104),
+  ('empty -> <empty>','empty',0,'p_empty','vsop_parser.py',113),
 ]

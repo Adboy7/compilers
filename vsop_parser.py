@@ -38,30 +38,59 @@ class VsopParser:
 
 ### GRAMMAR RULES
 
+  def p_formals(self,p):
+    '''formals : formal
+               | formals comma formal
+               | empty'''
+    print("shit")
+
+  def p_formal(self,p):
+    '''formal : object_identifier colon type_identifier'''
+
+  def p_block(self,p):
+    '''block : rbrace expression semicolon expression '''
   
   def p_expression(self, p):
       '''expression : if expression then expression
+                    | if expression then expression else expression
+                    | while expression do expression
+                    | let object_identifier colon type_identifier in expression
+                    | let object_identifier colon type_identifier assign expression in expression
+                    | object_identifier assign expression
+                    | not expression
+                    | expression and expression
+                    | expression equal expression
+                    | expression lower_equal expression
+                    | expression lower expression
+                    | expression plus expression
+                    | expression minus expression
+                    | expression times expression
+                    | expression div expression
+                    | expression pow expression
+                    | minus expression
+                    | isnull expression
+                    | object_identifier lpar args rpar
+                    | new type_identifier
                     | object_identifier
-                    | literal
-                    | object_identifier lpar args rpar'''
-
-      if(len(p)== 5):
-        p[0]=p[1]+p[2]+p[3]+p[4]
-      else:
-        p[0]=p[1]
+                    | literal 
+                    | lpar rpar
+                    | lpar expression rpar
+                    | block'''
+      p[0]=p[1]
+      for i in range(2,len(p)):
+        if(p[i]):
+          p[0]+=p[i]
       print("express")
 
   def p_args(self,p):
-    '''args : expression
-            | args comma expression'''
+      '''args : expression 
+              | args comma expression
+              | empty'''
 
-    print("args")
-    if(len(p)==4):
-      p[0]=p[1]+p[2]+p[3]
-      print("yes")
-
-    else:
+      print("args")
       p[0]=p[1]
+      for i in range(2,len(p)):
+        p[0]+=p[i]
  
 
   def p_literal(self,p):
@@ -83,7 +112,6 @@ class VsopParser:
 
   def p_empty(self, p):
     'empty :'
-    print("ok",p)
     pass
 
 ### ERROR HANDLING
@@ -94,7 +122,7 @@ class VsopParser:
 ### MAIN
 if __name__ == "__main__":
   import sys
-  text = 'az(a,n)'
+  text = 'as(a,a)'
   
   #lexer = VsopLexer()
   #tokens,errors = lexer.tokenize(text)
