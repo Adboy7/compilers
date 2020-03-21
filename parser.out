@@ -1,0 +1,359 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Unused terminals:
+
+    and
+    assign
+    bool
+    class
+    colon
+    div
+    do
+    dot
+    else
+    eof
+    equal
+    extends
+    in
+    int32
+    isnull
+    lbrace
+    let
+    lower
+    lower_equal
+    minus
+    new
+    not
+    plus
+    pow
+    rbrace
+    semicolon
+    string
+    times
+    type_identifier
+    unit
+    while
+
+Grammar
+
+Rule 0     S' -> expression
+Rule 1     expression -> if expression then expression
+Rule 2     expression -> object_identifier
+Rule 3     expression -> literal
+Rule 4     expression -> object_identifier lpar args rpar
+Rule 5     args -> expression
+Rule 6     args -> args comma expression
+Rule 7     literal -> integer_literal
+Rule 8     literal -> string_literal
+Rule 9     literal -> boolean_literal
+Rule 10    boolean_literal -> true
+Rule 11    boolean_literal -> false
+Rule 12    empty -> <empty>
+
+Terminals, with rules where they appear
+
+and                  : 
+assign               : 
+bool                 : 
+class                : 
+colon                : 
+comma                : 6
+div                  : 
+do                   : 
+dot                  : 
+else                 : 
+eof                  : 
+equal                : 
+error                : 
+extends              : 
+false                : 11
+if                   : 1
+in                   : 
+int32                : 
+integer_literal      : 7
+isnull               : 
+lbrace               : 
+let                  : 
+lower                : 
+lower_equal          : 
+lpar                 : 4
+minus                : 
+new                  : 
+not                  : 
+object_identifier    : 2 4
+plus                 : 
+pow                  : 
+rbrace               : 
+rpar                 : 4
+semicolon            : 
+string               : 
+string_literal       : 8
+then                 : 1
+times                : 
+true                 : 10
+type_identifier      : 
+unit                 : 
+while                : 
+
+Nonterminals, with rules where they appear
+
+args                 : 4 6
+boolean_literal      : 9
+empty                : 
+expression           : 1 1 5 6 0
+literal              : 3
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . expression
+    (1) expression -> . if expression then expression
+    (2) expression -> . object_identifier
+    (3) expression -> . literal
+    (4) expression -> . object_identifier lpar args rpar
+    (7) literal -> . integer_literal
+    (8) literal -> . string_literal
+    (9) literal -> . boolean_literal
+    (10) boolean_literal -> . true
+    (11) boolean_literal -> . false
+
+    if              shift and go to state 2
+    object_identifier shift and go to state 3
+    integer_literal shift and go to state 5
+    string_literal  shift and go to state 6
+    true            shift and go to state 8
+    false           shift and go to state 9
+
+    expression                     shift and go to state 1
+    literal                        shift and go to state 4
+    boolean_literal                shift and go to state 7
+
+state 1
+
+    (0) S' -> expression .
+
+
+
+state 2
+
+    (1) expression -> if . expression then expression
+    (1) expression -> . if expression then expression
+    (2) expression -> . object_identifier
+    (3) expression -> . literal
+    (4) expression -> . object_identifier lpar args rpar
+    (7) literal -> . integer_literal
+    (8) literal -> . string_literal
+    (9) literal -> . boolean_literal
+    (10) boolean_literal -> . true
+    (11) boolean_literal -> . false
+
+    if              shift and go to state 2
+    object_identifier shift and go to state 3
+    integer_literal shift and go to state 5
+    string_literal  shift and go to state 6
+    true            shift and go to state 8
+    false           shift and go to state 9
+
+    expression                     shift and go to state 10
+    literal                        shift and go to state 4
+    boolean_literal                shift and go to state 7
+
+state 3
+
+    (2) expression -> object_identifier .
+    (4) expression -> object_identifier . lpar args rpar
+
+    $end            reduce using rule 2 (expression -> object_identifier .)
+    then            reduce using rule 2 (expression -> object_identifier .)
+    rpar            reduce using rule 2 (expression -> object_identifier .)
+    comma           reduce using rule 2 (expression -> object_identifier .)
+    lpar            shift and go to state 11
+
+
+state 4
+
+    (3) expression -> literal .
+
+    $end            reduce using rule 3 (expression -> literal .)
+    then            reduce using rule 3 (expression -> literal .)
+    rpar            reduce using rule 3 (expression -> literal .)
+    comma           reduce using rule 3 (expression -> literal .)
+
+
+state 5
+
+    (7) literal -> integer_literal .
+
+    $end            reduce using rule 7 (literal -> integer_literal .)
+    then            reduce using rule 7 (literal -> integer_literal .)
+    rpar            reduce using rule 7 (literal -> integer_literal .)
+    comma           reduce using rule 7 (literal -> integer_literal .)
+
+
+state 6
+
+    (8) literal -> string_literal .
+
+    $end            reduce using rule 8 (literal -> string_literal .)
+    then            reduce using rule 8 (literal -> string_literal .)
+    rpar            reduce using rule 8 (literal -> string_literal .)
+    comma           reduce using rule 8 (literal -> string_literal .)
+
+
+state 7
+
+    (9) literal -> boolean_literal .
+
+    $end            reduce using rule 9 (literal -> boolean_literal .)
+    then            reduce using rule 9 (literal -> boolean_literal .)
+    rpar            reduce using rule 9 (literal -> boolean_literal .)
+    comma           reduce using rule 9 (literal -> boolean_literal .)
+
+
+state 8
+
+    (10) boolean_literal -> true .
+
+    $end            reduce using rule 10 (boolean_literal -> true .)
+    then            reduce using rule 10 (boolean_literal -> true .)
+    rpar            reduce using rule 10 (boolean_literal -> true .)
+    comma           reduce using rule 10 (boolean_literal -> true .)
+
+
+state 9
+
+    (11) boolean_literal -> false .
+
+    $end            reduce using rule 11 (boolean_literal -> false .)
+    then            reduce using rule 11 (boolean_literal -> false .)
+    rpar            reduce using rule 11 (boolean_literal -> false .)
+    comma           reduce using rule 11 (boolean_literal -> false .)
+
+
+state 10
+
+    (1) expression -> if expression . then expression
+
+    then            shift and go to state 12
+
+
+state 11
+
+    (4) expression -> object_identifier lpar . args rpar
+    (5) args -> . expression
+    (6) args -> . args comma expression
+    (1) expression -> . if expression then expression
+    (2) expression -> . object_identifier
+    (3) expression -> . literal
+    (4) expression -> . object_identifier lpar args rpar
+    (7) literal -> . integer_literal
+    (8) literal -> . string_literal
+    (9) literal -> . boolean_literal
+    (10) boolean_literal -> . true
+    (11) boolean_literal -> . false
+
+    if              shift and go to state 2
+    object_identifier shift and go to state 3
+    integer_literal shift and go to state 5
+    string_literal  shift and go to state 6
+    true            shift and go to state 8
+    false           shift and go to state 9
+
+    args                           shift and go to state 13
+    expression                     shift and go to state 14
+    literal                        shift and go to state 4
+    boolean_literal                shift and go to state 7
+
+state 12
+
+    (1) expression -> if expression then . expression
+    (1) expression -> . if expression then expression
+    (2) expression -> . object_identifier
+    (3) expression -> . literal
+    (4) expression -> . object_identifier lpar args rpar
+    (7) literal -> . integer_literal
+    (8) literal -> . string_literal
+    (9) literal -> . boolean_literal
+    (10) boolean_literal -> . true
+    (11) boolean_literal -> . false
+
+    if              shift and go to state 2
+    object_identifier shift and go to state 3
+    integer_literal shift and go to state 5
+    string_literal  shift and go to state 6
+    true            shift and go to state 8
+    false           shift and go to state 9
+
+    expression                     shift and go to state 15
+    literal                        shift and go to state 4
+    boolean_literal                shift and go to state 7
+
+state 13
+
+    (4) expression -> object_identifier lpar args . rpar
+    (6) args -> args . comma expression
+
+    rpar            shift and go to state 16
+    comma           shift and go to state 17
+
+
+state 14
+
+    (5) args -> expression .
+
+    rpar            reduce using rule 5 (args -> expression .)
+    comma           reduce using rule 5 (args -> expression .)
+
+
+state 15
+
+    (1) expression -> if expression then expression .
+
+    $end            reduce using rule 1 (expression -> if expression then expression .)
+    then            reduce using rule 1 (expression -> if expression then expression .)
+    rpar            reduce using rule 1 (expression -> if expression then expression .)
+    comma           reduce using rule 1 (expression -> if expression then expression .)
+
+
+state 16
+
+    (4) expression -> object_identifier lpar args rpar .
+
+    $end            reduce using rule 4 (expression -> object_identifier lpar args rpar .)
+    then            reduce using rule 4 (expression -> object_identifier lpar args rpar .)
+    rpar            reduce using rule 4 (expression -> object_identifier lpar args rpar .)
+    comma           reduce using rule 4 (expression -> object_identifier lpar args rpar .)
+
+
+state 17
+
+    (6) args -> args comma . expression
+    (1) expression -> . if expression then expression
+    (2) expression -> . object_identifier
+    (3) expression -> . literal
+    (4) expression -> . object_identifier lpar args rpar
+    (7) literal -> . integer_literal
+    (8) literal -> . string_literal
+    (9) literal -> . boolean_literal
+    (10) boolean_literal -> . true
+    (11) boolean_literal -> . false
+
+    if              shift and go to state 2
+    object_identifier shift and go to state 3
+    integer_literal shift and go to state 5
+    string_literal  shift and go to state 6
+    true            shift and go to state 8
+    false           shift and go to state 9
+
+    expression                     shift and go to state 18
+    literal                        shift and go to state 4
+    boolean_literal                shift and go to state 7
+
+state 18
+
+    (6) args -> args comma expression .
+
+    rpar            reduce using rule 6 (args -> args comma expression .)
+    comma           reduce using rule 6 (args -> args comma expression .)
+

@@ -37,15 +37,53 @@ class VsopParser:
     return result
 
 ### GRAMMAR RULES
+
+  
   def p_expression(self, p):
-    '''expression : int32
-                  | string
-                  | type_identifier
-                  | object_identifier'''
-    print("hello")
+      '''expression : if expression then expression
+                    | object_identifier
+                    | literal
+                    | object_identifier lpar args rpar'''
+
+      if(len(p)== 5):
+        p[0]=p[1]+p[2]+p[3]+p[4]
+      else:
+        p[0]=p[1]
+      print("express")
+
+  def p_args(self,p):
+    '''args : expression
+            | args comma expression'''
+
+    print("args")
+    if(len(p)==4):
+      p[0]=p[1]+p[2]+p[3]
+      print("yes")
+
+    else:
+      p[0]=p[1]
+ 
+
+  def p_literal(self,p):
+    '''literal : integer_literal
+               | string_literal
+               | boolean_literal'''
+    p[0]=p[1]
+    print("literal",p[0])
+
+  def p_boolean_literal(self,p):
+    '''boolean_literal : true 
+                       | false'''
+    p[0]=p[1]
+    print("bool")
+   
+  
+
+  
 
   def p_empty(self, p):
     'empty :'
+    print("ok",p)
     pass
 
 ### ERROR HANDLING
@@ -56,7 +94,11 @@ class VsopParser:
 ### MAIN
 if __name__ == "__main__":
   import sys
-  text = open(sys.argv[1], 'r').read()
+  text = 'az(a,n)'
+  
+  #lexer = VsopLexer()
+  #tokens,errors = lexer.tokenize(text)
+  #print(tokens)
   parser = VsopParser()
   result = parser.parse(text)
-  print(result)
+  print("Result :",result)
