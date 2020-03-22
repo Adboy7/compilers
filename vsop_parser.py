@@ -170,9 +170,6 @@ class VsopParser:
     if len(p) == 5:
       p[0] = Call(p[1], p[3])
     else:
-      print("wololo")
-      for e in p:
-        print(e)
       p[0] = Call(p[3], p[5], p[1])
 
   def p_args(self,p):

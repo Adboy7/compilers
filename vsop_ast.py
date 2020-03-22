@@ -19,8 +19,10 @@ class Node:
 class Program(Node):
   def __init__(self, list_class=[]):
     self.list_class = list_class
+    
   def add(self, cl):
     self.list_class.append(cl)
+
   def __str__(self):
     return f"[" + ", ".join([str(x) for x in self.list_class]) + "]"
 
@@ -92,10 +94,18 @@ class If(Node):
     self.then_expr = then_expr
     self.else_expr = else_expr
 
+  def __str__(self):
+    return f"If({self.cond_expr}, " \
+           f"{self.then_expr}" \
+           f"{', ' + str(self.else_expr) if self.else_expr else ''})"
+
 class While(Node):
   def __init__(self, cond_expr, body_expr):
     self.cond_expr = cond_expr
     self.body_expr = body_expr
+
+  def __str__(self):
+    return f"While({self.cond_expr}, {self.body_expr})"
 
 class Let(Node):
   def __init__(self, name, type, scope_expr, init_expr=None):
@@ -107,7 +117,7 @@ class Let(Node):
   def __str__(self):
     return f"Let({self.name}, " \
            f"{self.type}{', ' + str(self.init_expr) if self.init_expr else ''}, " \
-           f"{self.scope_expr})"
+           f"[{', '.join([str(x) for x in self.scope_expr])}])"
 
 
 class Assign(Node):
