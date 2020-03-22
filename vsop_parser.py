@@ -49,7 +49,7 @@ class VsopParser:
   def __init__(self, debug=False):
     self.tokens = VsopLexer.tokens
     self.lexer = VsopLexer()
-    self.parser = yacc.yacc(module=self, debug=debug)   
+    self.parser = yacc.yacc(module=self, debug=debug, errorlog=yacc.NullLogger())   
 
   def parse(self, text):
     self.errors = []
@@ -235,9 +235,22 @@ class VsopParser:
   
 
 ### ERROR HANDLING
+  def p_class_grammar_error(self, p):
+    '''class_grammar : class error lbrace class_body rbrace'''
+    self.errors.append(ParseError(p.lineno, p.column, "Unexpected class name"))
+
+  def p_field_error_semicolon(self, p):
+    '''field : object_identifier colon type error
+             | object_identifier colon type assign expression error'''
+    self.errors.append(ParseError(p.lineno, p.column, "Missing semicolon"))
+
+  
+
   def p_error(self, p):
-    if p:
-      self.errors.append(ParseError(p.lineno, p.column, "Unexpected token"))
+    if not p:
+      self.errors.append(ParseError(p.lineno, p.column, "Unexpected EOF"))
+    else:
+      pass
     # else:
     #   self.errors.append(ParseError(p.lineno, p.column, "Unexpected EOF"))
 
@@ -247,6 +260,6 @@ class VsopParser:
 if __name__ == "__main__":
   import sys
   text = open(sys.argv[1], 'r').read()
-  parser = VsopParser(debug=True)
+  parser = VsopParser(debug=False)
   result, errors = parser.parse(text)
   print(result)

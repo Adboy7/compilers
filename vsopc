@@ -82,10 +82,16 @@ def main(argv):
                 tokens,errors = lexer.tokenize(text)
                 print_error(errors,f)
                 print_token(tokens)
+                if errors:
+                    exit(1)
             elif mode == 2:
                 parser = VsopParser()
                 prog, errors = parser.parse(text)
+                for e in errors:
+                    print(e)
                 print(prog)
+                if errors:
+                    exit(1)
 
 
 if __name__ == "__main__":

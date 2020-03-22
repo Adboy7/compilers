@@ -11,3 +11,6 @@ install-tools:
 
 vsopc:
 	sudo chmod +x vsopc.py
+
+archive: clean
+	cd ..; tar cvJf vsopcompiler.tar.xz --exclude=vsopcompiler/.git --exclude=vsopcompiler/tests vsopcompiler/

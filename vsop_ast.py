@@ -48,9 +48,15 @@ class Field(Node):
     self.init_expr = init_expr
   
   def __str__(self):
+    if isinstance(self.init_expr, list) and len(self.init_expr) > 1:
+      init_expr = f"[{', '.join([str(x) for x in self.init_expr])}]"
+    elif isinstance(self.init_expr, list) and len(self.init_expr):
+      init_expr = str(self.init_expr[0])
+    else:
+      init_expr = self.init_expr
     return f"Field({self.name}, " \
            f"{self.type}" \
-           f"{', ' + str(self.init_expr) if self.init_expr else ''})"
+           f"{', ' + str(init_expr) if init_expr else ''})"
 
 
 class Method(Node):
@@ -155,8 +161,10 @@ class Let(Node):
     self.init_expr = init_expr
 
   def __str__(self):
-    if isinstance(self.scope_expr, list):
+    if isinstance(self.scope_expr, list) and len(self.scope_expr) > 1:
       scope_expr = f"[{', '.join([str(x) for x in self.scope_expr])}]"
+    elif isinstance(self.scope_expr, list) and len(self.scope_expr):
+      scope_expr = str(self.scope_expr[0])
     else:
       scope_expr = self.scope_expr
     return f"Let({self.name}, " \
@@ -199,9 +207,13 @@ class Call(Node):
     self.expr_list = expr_list
 
   def __str__(self):
+    if isinstance(self.expr_list, list):
+      expr_list = f"[{', '.join([str(x) for x in self.expr_list])}]"
+    else:
+      expr_list = f"[{self.expr_list}]"
     return f"Call({self.obj_expr}, " \
            f"{self.method_name}, " \
-           f"[{', '.join([str(x) for x in self.expr_list])}])"
+           f"{expr_list})"
 
 
 class New(Node):
