@@ -8,6 +8,9 @@
 #   https://www.dabeaz.com/ply/ply.html#ply_nn34
 #   https://github.com/andfelzapata/python-ply-mini-java/blob/master/ast.py
 #
+# May seem messy, but we were fed up of formatting... 
+# so almost all nodes have the same format rule
+#
 # -----------------------------------------------------------------------------
 __author__  = "Adrien and Kevin"
 __version__ = '1.0'

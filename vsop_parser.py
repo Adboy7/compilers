@@ -23,7 +23,7 @@ import ply.yacc as yacc
 from vsop_lexer import *
 from vsop_ast import *
 
-class ParseError(Exception):
+class ParseError():
   def __init__(self, message, line=None, column=None, token=None, expected=None):
     self.line = line
     self.column = column
@@ -237,26 +237,27 @@ class VsopParser:
   
 
 ### ERROR HANDLING
+  def handle_error(self, message):
+    error = self.errors.pop()
+    error.message = message
+    self.errors.append(error)
+
   def p_class_grammar_error(self, p):
     '''class_grammar : class error lbrace class_body rbrace'''
-    error = self.errors.pop()
-    error.message = "Unexpected class name"
-    self.errors.append(error)
+    self.handle_error("Unexpected class name")
 
   def p_field_error_missing_semicolon(self, p):
     '''field : object_identifier colon type error
              | object_identifier colon type assign expression error'''
-    error = self.errors.pop()
-    error.message = "Missing semicolon"
-    self.errors.append(error)
+    self.handle_error("Missing semicolon")
 
   def p_field_error_missing_type(self, p):
     '''field : object_identifier error semicolon
              | object_identifier error assign expression semicolon'''
-    error = self.errors.pop()
-    error.message = "Missing field type"
-    self.errors.append(error)
- 
+    self.handle_error("Missing field type")
+
+  ## To much work for the moment, so we will handle errors better later
+  ## For now, we know to handle them but the default handler will do the job
 
   def p_error(self, p):
     if not p:
