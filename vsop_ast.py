@@ -61,12 +61,16 @@ class Method(Node):
     self.block = block
 
   def __str__(self):
+    if isinstance(self.block, list) and len(self.block) > 1:
+      block = f"[{', '.join([str(x) for x in self.block])}]"
+    elif isinstance(self.block, list) and len(self.block):
+      block = str(self.block[0])
+    else:
+      block = self.block
     return f"Method({self.name}, " \
            f"[{', '.join([str(x) for x in self.formals])}], " \
            f"{self.ret_type}, " \
-           f'''{str(self.block[0]) 
-              if len(self.block) == 1 
-              else '[' + ', '.join([str(x) for x in self.block]) + ']'})''' #OMG
+           f"{block})"
 
 
 # Useless
@@ -94,9 +98,30 @@ class If(Node):
     self.else_expr = else_expr
 
   def __str__(self):
-    return f"If({self.cond_expr}, " \
-           f"{self.then_expr}" \
-           f"{', ' + str(self.else_expr) if self.else_expr else ''})"
+    if isinstance(self.cond_expr, list) and len(self.cond_expr) > 1:
+      cond_expr = f"[{', '.join([str(x) for x in self.cond_expr])}]"
+    elif isinstance(self.cond_expr, list) and len(self.cond_expr):
+      cond_expr = str(self.cond_expr[0])
+    else:
+      cond_expr = self.cond_expr
+
+    if isinstance(self.then_expr, list) and len(self.then_expr) > 1:
+      then_expr = f"[{', '.join([str(x) for x in self.then_expr])}]"
+    elif isinstance(self.then_expr, list) and len(self.then_expr):
+      then_expr = str(self.then_expr[0])
+    else:
+      then_expr = self.then_expr
+
+    if isinstance(self.else_expr, list) and len(self.else_expr) > 1:
+      else_expr = f"[{', '.join([str(x) for x in self.else_expr])}]"
+    elif isinstance(self.else_expr, list) and len(self.else_expr):
+      else_expr = str(self.else_expr[0])
+    else:
+      else_expr = self.else_expr
+
+    return f"If({cond_expr}, " \
+           f"{then_expr}" \
+           f"{', ' + str(else_expr) if else_expr else ''})"
 
 
 class While(Node):
@@ -105,7 +130,21 @@ class While(Node):
     self.body_expr = body_expr
 
   def __str__(self):
-    return f"While({self.cond_expr}, {self.body_expr})"
+    if isinstance(self.cond_expr, list) and len(self.cond_expr) > 1:
+      cond_expr = f"[{', '.join([str(x) for x in self.cond_expr])}]"
+    elif isinstance(self.cond_expr, list) and len(self.cond_expr):
+      cond_expr = str(self.cond_expr[0])
+    else:
+      cond_expr = self.cond_expr
+
+    if isinstance(self.body_expr, list) and len(self.body_expr) > 1:
+      body_expr = f"[{', '.join([str(x) for x in self.body_expr])}]"
+    elif isinstance(self.body_expr, list) and len(self.body_expr):
+      body_expr = str(self.body_expr[0])
+    else:
+      body_expr = self.body_expr
+
+    return f"While({cond_expr}, {body_expr})"
 
 
 class Let(Node):
@@ -116,9 +155,13 @@ class Let(Node):
     self.init_expr = init_expr
 
   def __str__(self):
+    if isinstance(self.scope_expr, list):
+      scope_expr = f"[{', '.join([str(x) for x in self.scope_expr])}]"
+    else:
+      scope_expr = self.scope_expr
     return f"Let({self.name}, " \
            f"{self.type}{', ' + str(self.init_expr) if self.init_expr else ''}, " \
-           f"[{', '.join([str(x) for x in self.scope_expr])}])"
+           f"{scope_expr})"
 
 
 class Assign(Node):

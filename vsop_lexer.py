@@ -133,15 +133,24 @@ class VsopLexer():
     self.last_lineno = 0
     self.last_column = 0
     self.lexer = lex.lex(module=self)
+  
+  def input(self, text):
+    self.lexer.input(text)
+
+  def token(self):
+    while True:
+      t = self.lexer.token()
+      break
+    if t and not hasattr(t, 'column'):
+        t.column = self.find_column(t)
+    return t
 
   def tokenize(self, text):
     tokens = []
     self.lexer.input(text)
     while True:
-      tok = self.lexer.token()
+      tok = self.token()
       if not tok: break
-      if not hasattr(tok, 'column'):
-        tok.column = self.find_column(tok)
       tokens.append(tok)
     return tokens, self.errors
 
@@ -341,4 +350,4 @@ if __name__ == "__main__":
   for e in errors:
     print(e)
   for t in toks:
-    print(t)
+    print(f"{t.lineno},{t.column},{t.type}")

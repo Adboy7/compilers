@@ -50,7 +50,7 @@ class VsopParser:
 
   def parse(self, text):
     self.errors = []
-    result = self.parser.parse(text)
+    result = self.parser.parse(text, lexer=self.lexer)
     return result, self.errors
 
 ### GRAMMAR RULES

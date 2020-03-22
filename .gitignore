@@ -1,6 +1,7 @@
 # Add specific files HERE
 parser.out
 parsetab.py
+ret.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
