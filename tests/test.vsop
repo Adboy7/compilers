@@ -1,0 +1,7 @@
+class MyClass {
+    i : int32 <- 0x1b;
+}
+
+class MyClass2 {
+    i : int32 <- 0x1b;
+}

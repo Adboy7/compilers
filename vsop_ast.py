@@ -15,22 +15,38 @@ __version__ = '1.0'
 class Node:
   pass
 
+
 class Program(Node):
-  def __init__(self, classes=[]):
-    self.classes = classes
+  def __init__(self, list_class=[]):
+    self.list_class = list_class
+  def add(self, cl):
+    self.list_class.append(cl)
+  def __str__(self):
+    return f"[" + ", ".join([str(x) for x in self.list_class]) + "]"
+
 
 class Class(Node):
-  def __init__(self, name, fields, methods, parent=None):
+  def __init__(self, name, fields, methods, parent="Object"):
     self.name = name
     self.fields = fields
     self.methods = methods
     self.parent = parent
+
+  def __str__(self):
+    return f"Class({self.name}, " \
+           f"{self.parent}, " \
+           f"[{', '.join([str(x) for x in self.fields])}], " \
+           f"[{', '.join([str(x) for x in self.methods])}])"
 
 class Field(Node):
   def __init__(self, name, type, init_expr=None):
     self.name = name
     self.type = type
     self.init_expr = init_expr
+  
+  def __str__(self):
+    return f"Field({self.name}, {self.type})"
+
 
 class Method(Node):
   def __init__(self, name, formals, ret_type, block):
@@ -38,6 +54,10 @@ class Method(Node):
     self.formals = formals
     self.ret_type = ret_type
     self.block = block
+
+  def __str__(self):
+    return f"Method({self.name}, [formalsTODO], {self.ret_type}, [blockTODO])"
+
 
 class Type(Node):
   def __init__(self, type):
@@ -59,9 +79,6 @@ class Formal(Node):
   def __init__(self, name, type):
     self.name = name
     self.type = type
-
-class Block(Node):
-  pass
 
 class If(Node):
   def __init__(self, cond_expr, then_expr, else_expr=None):
@@ -98,7 +115,7 @@ class BinOp(Node):
     self.right_expr = right_expr
 
 class Call(Node):
-  def __init__(self, obj_expr, method_name, expr_list=[]):
+  def __init__(self, method_name, expr_list=[], obj_expr="self"):
     self.obj_expr = obj_expr
     self.method_name = method_name
     self.expr_list = expr_list
@@ -124,4 +141,6 @@ class BoolLiteral(Node):
 class UnitLiteral(Node):
   pass
 
-# expr = "(" expr ")" ???????????
+class Block(Node):
+  def __init__(self):
+    self.expr = []

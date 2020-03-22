@@ -1,3 +1,0 @@
-class MyClass {
-    i : int32 <- 0x1b;
-}

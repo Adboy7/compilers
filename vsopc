@@ -44,7 +44,7 @@ def print_error(errors,f):
         eprint(f,":",er.line,":",er.column,": lexical error:",er.description,sep="")
 
 def main(argv):
-    phase = 0
+    mode = 0
     files = []
 
     for arg in argv:
@@ -52,11 +52,11 @@ def main(argv):
             print("vsop.py -lex <inputfile>")
             exit()
         elif arg in ("-lex", "--lexer"):
-            phase = 1
+            mode = 1
         else:
             files.append(arg)
 
-    if phase != 1:
+    if mode != 1:
         print(Style.WARNING + "The only available for now is the lexer"
             + Style.ENDC)
         print("vsop.py -lex <inputfile>")

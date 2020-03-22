@@ -17,6 +17,7 @@ __version__ = '1.0'
 import ply.lex as lex
 import ply.yacc as yacc
 from vsop_lexer import *
+from vsop_ast import *
 
 class ParseError(Exception):
   def __init__(self, line, column, message):
@@ -24,191 +25,212 @@ class ParseError(Exception):
     self.column = column
     self.message = message
 
+  def __str__(self):
+    return f"{self.line}:{self.column}: syntax error: {self.message}"
+
 
 class VsopParser:
-  def __init__(self):
+  def __init__(self, debug=False):
     self.tokens = VsopLexer.tokens
     self.lexer = VsopLexer()
-    self.parser = yacc.yacc(module=self)
-    
+    self.parser = yacc.yacc(module=self, debug=debug)   
 
   def parse(self, text):
+    self.errors = []
     result = self.parser.parse(text)
-    return result
+    return result, self.errors
 
 ### GRAMMAR RULES
-  def p_program(self,p):
+  def p_program(self, p):
     '''program : class_grammar
                | program class_grammar'''
-    p[0]=p[1]
-    for i in range(2,len(p)):
-      if(p[i]):
-        p[0]+=p[i]
-    print("program")
+    if len(p) == 3:
+      p[0] = p[1]
+      p[0].add(p[2])
+    else:
+      p[0] = Program([p[1]])
 
   def p_class_grammar(self, p):
-    '''class_grammar : class type_identifier class_body
-                     | class type_identifier extends type_identifier class_body'''
-    p[0]=p[1]
-    for i in range(2,len(p)):
-      if(p[i]):
-        p[0]+=p[i]
-    print("class")
+    '''class_grammar : class type_identifier lbrace class_body rbrace
+                     | class type_identifier extends type_identifier lbrace class_body rbrace'''
+    if len(p) == 8:
+      p[0] = Class(p[2], p[6][0], p[6][1], p[4])
+    else:
+      p[0] = Class(p[2], p[4][0], p[4][1])
 
-  def p_class_body(self,p):
-    '''class_body : lbrace mid_class_body rbrace'''
-    p[0]=p[1]
-    for i in range(2,len(p)):
-      if(p[i]):
-        p[0]+=p[i]
-    print("class_body")
+  def p_class_body(self, p):
+    '''class_body : class_body field
+                  | class_body method
+                  | '''
+    if len(p) == 1:
+        p[0] = [[], []]
+    else:
+      p[0] = p[1]
+      if type(p[2]) == Field:
+        p[0][0].append(p[2])
+      elif type(p[2]) == Method:
+        p[0][1].append(p[2])
   
-  def p_mid_class_body(self,p):
-    '''mid_class_body : empty
-                      | mid_class_body method 
-                      | mid_class_body field '''
-    
-    print("midclass")
-
-  def p_field(self,p):
+  def p_field(self, p):
     '''field : object_identifier colon type semicolon
              | object_identifier colon type assign expression semicolon'''
-    p[0]=p[1]
-    for i in range(2,len(p)):
-      if(p[i]):
-        p[0]+=str(p[i])
-    print("field")
+    if len(p) == 7:
+      p[0] = Field(p[1], p[3], p[5])
+    else:
+      p[0] = Field(p[1], p[3])
 
-  def p_method(self,p):
+  def p_method(self, p):
     '''method : object_identifier lpar formals rpar colon type block'''
-    p[0]=p[1]
-    for i in range(2,len(p)):
-      if(p[i]):
-        p[0]+=p[i]
+    p[0] = Method(p[1], p[3], p[6], p[7])
 
-  def p_type(self,p):
+  def p_type(self, p):
     '''type : type_identifier
             | int32
             | bool
             | string
             | unit'''
-    p[0]=p[1] 
+    p[0] = p[1]
 
-  def p_formals(self,p):
+  def p_formals(self, p):
     '''formals : formal
                | formals comma formal
-               | empty'''
-    p[0]=p[1]
-    for i in range(2,len(p)):
-      if(p[i]):
-        p[0]+=p[i]
-    print("formals")
+               | '''
+    if len(p) == 1:
+      p[0] = []
+    elif len(p) == 4 and p[3]:
+      p[0] = p[1] + [p[3]]
+    elif p[1]:
+      p[0] = [p[1]]
+    else:
+      p[0] = []
 
-  def p_formal(self,p):
+  def p_formal(self, p):
     '''formal : object_identifier colon type'''
-    p[0]=p[1]
-    for i in range(2,len(p)):
-      if(p[i]):
-        p[0]+=p[i]
-    print("formal")
+    p[0] = Formal(p[1], p[3])
 
   def p_block(self,p):
-    '''block : lbrace expression mid_block rbrace '''
+    '''block : lbrace expressions rbrace '''
     p[0]=p[1]
-    for i in range(2,len(p)):
-      if(p[i]):
-        p[0]+=p[i]
-    print("block")
 
-  def p_mid_block(self,p):
-    '''mid_block : empty
-                 | semicolon expression
-                 | mid_block semicolon expression'''
-    p[0]=p[1]
-    for i in range(2,len(p)):
-      if(p[i]):
-        p[0]+=p[i]
-    print("midblock")
-  
-  def p_expression(self, p):
+  def p_expressions(self, p):
+    '''expressions : expression
+                   | expressions semicolon expression'''
+    if len(p) == 2:
+      p[0] = [p[1]]
+    else:
+      p[0] = p[1]
+      if p[3]:
+        p[0].append(p[3])
+
+  def p_expression_if(self, p):
     '''expression : if expression then expression
-                  | if expression then expression else expression
-                  | while expression do expression
-                  | let object_identifier colon type in expression
-                  | let object_identifier colon type assign expression in expression
-                  | object_identifier assign expression
-                  | not expression
-                  | expression and expression
-                  | expression equal expression
-                  | expression lower_equal expression
-                  | expression lower expression
-                  | expression plus expression
-                  | expression minus expression
-                  | expression times expression
-                  | expression div expression
-                  | expression pow expression
+                  | if expression then expression else expression'''
+    if len(p) == 5:
+      p[0] = If(p[2], p[4])
+    else:
+      p[0] = If(p[2], p[4], p[6])
+
+  def p_expression_while(self, p):
+    'expression : while expression do expression'
+    p[0] = While(p[2], p[4])
+
+  def p_expression_let(self, p):
+    '''expression : let object_identifier colon type in expression
+                  | let object_identifier colon type assign expression in expression'''
+    if len(p) == 7:
+      p[0] = Let(p[2], p[4], p[6])
+    else:
+      p[0] = Let(p[2], p[4], p[8], p[6])
+  
+  def p_expression_assign(self, p):
+    'expression : object_identifier assign expression'
+    p[0] = Assign(p[1], p[3])
+
+  def p_expression_unop(self, p):
+    '''expression : not expression
                   | minus expression
-                  | isnull expression
-                  | object_identifier lpar args rpar
-                  | new type_identifier
-                  | object_identifier
-                  | literal 
-                  | lpar rpar
-                  | lpar expression rpar
-                  | block'''
-    p[0]=p[1]
-    for i in range(2,len(p)):
-      if(p[i]):
-        p[0]+=p[i]
-    print("express")
+                  | isnull expression'''
+    p[0] = UnOp(p[1], p[2])
+
+  def p_expression_binop(self, p):
+    '''expression : expression and expression
+            | expression equal expression
+            | expression lower_equal expression
+            | expression lower expression
+            | expression plus expression
+            | expression minus expression
+            | expression times expression
+            | expression div expression
+            | expression pow expression'''
+    p[0] = BinOp(p[2], p[1], p[3])
+
+  def p_expression_call(self, p):
+    '''expression : object_identifier lpar args rpar
+                  | expression dot object_identifier lpar args rpar'''
+    if len(p) == 5:
+      p[0] = Call(p[1], p[3])
+    else:
+      p[0] = Call(p[3], p[5], p[1])
 
   def p_args(self,p):
-      '''args : expression 
-              | args comma expression
-              | empty'''
+    '''args : expression 
+            | args comma expression
+            | '''
+    if len(p) == 1:
+      p[0] = []
+    elif len(p) == 2:
+      p[0] = [p[1]]
+    else:
+      p[0] = p[1] + [p[3]]
 
-      print("args")
-      p[0]=p[1]
-      for i in range(2,len(p)):
-        p[0]+=p[i]
- 
+  def p_expression_new(self, p):
+    '''expression : new type_identifier'''
+    p[0] = New(p[2])
+
+  ## TODO messy here
+  def p_expression_variable(self, p):
+    '''expression : object_identifier'''
+    p[0] = p[1]
+
+  def p_expression_literal(self, p):
+    '''expression : literal'''
+    p[0] = p[1]
 
   def p_literal(self,p):
     '''literal : integer_literal
                | string_literal
                | boolean_literal'''
-    p[0]=p[1]
-    print("literal",p[0])
+    p[0] = p[1]
 
   def p_boolean_literal(self,p):
     '''boolean_literal : true 
                        | false'''
-    p[0]=p[1]
-    print("bool")
+    p[0] = p[1]
+  
+  def p_expression(self, p):
+    '''expression : lpar rpar
+                  | lpar expression rpar
+                  | block'''
+    p[0] = p[1]
+
    
-  
-
-  
-
   def p_empty(self, p):
     'empty :'
     pass
+  
 
 ### ERROR HANDLING
   def p_error(self, p):
+    print("error")
+    print(p)
     pass
 
 
 ### MAIN
+# python vsop_parser.py test.vsop
 if __name__ == "__main__":
   import sys
-  with open("test.vsop", 'r') as file:
-    input = file.read()
-  text = input
-  print(text)
-  #lexer = VsopLexer()
-  #tokens,errors = lexer.tokenize(text)
-  #print(tokens)
-  parser = VsopParser()
-  result = parser.parse(text)
-  print("Result :",result)
+  text = open(sys.argv[1], 'r').read()
+  parser = VsopParser(debug=True)
+  result, errors = parser.parse(text)
+  print(result)
