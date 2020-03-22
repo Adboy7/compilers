@@ -49,14 +49,17 @@ class Field(Node):
 
 
 class Method(Node):
-  def __init__(self, name, formals, ret_type, block):
+  def __init__(self, name, formals, ret_type, block=[]):
     self.name = name
     self.formals = formals
     self.ret_type = ret_type
     self.block = block
 
   def __str__(self):
-    return f"Method({self.name}, [formalsTODO], {self.ret_type}, [blockTODO])"
+    return f"Method({self.name}, " \
+           f"[{', '.join([str(x) for x in self.formals])}], " \
+           f"{self.ret_type}, " \
+           f"[{', '.join([str(x) for x in self.block])}])"
 
 
 class Type(Node):
@@ -79,6 +82,9 @@ class Formal(Node):
   def __init__(self, name, type):
     self.name = name
     self.type = type
+  
+  def __str__(self):
+    return f"{self.name}:{self.type}"
 
 class If(Node):
   def __init__(self, cond_expr, then_expr, else_expr=None):
@@ -98,10 +104,19 @@ class Let(Node):
     self.scope_expr = scope_expr
     self.init_expr = init_expr
 
+  def __str__(self):
+    return f"Let({self.name}, " \
+           f"{self.type}{', ' + str(self.init_expr) if self.init_expr else ''}, " \
+           f"{self.scope_expr})"
+
+
 class Assign(Node):
   def __init__(self, name, expr):
     self.name = name
     self.expr = expr
+  
+  def __str__(self):
+    return f"Assign({self.name}, {self.expr})"
 
 class UnOp(Node):
   def __init__(self, op, expr):
@@ -114,17 +129,24 @@ class BinOp(Node):
     self.left_expr = left_expr
     self.right_expr = right_expr
 
+  def __str__(self):
+    return f"BinOp({self.op}, {self.left_expr}, {self.right_expr})"
+
 class Call(Node):
   def __init__(self, method_name, expr_list=[], obj_expr="self"):
     self.obj_expr = obj_expr
     self.method_name = method_name
     self.expr_list = expr_list
 
+  def __str__(self):
+    return f"Call({self.obj_expr}, {self.method_name})"
+
 class New(Node):
   def __init__(self, type_name):
     self.type_name = type_name
 
-# expr - literal; ???????????????????
+  def __str__(self):
+    return f"New({self.type_name})"
 
 class IntegerLiteral(Node):
   def __init__(self, literal):

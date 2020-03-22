@@ -110,7 +110,7 @@ class VsopParser:
 
   def p_block(self,p):
     '''block : lbrace expressions rbrace '''
-    p[0]=p[1]
+    p[0] = p[2]
 
   def p_expressions(self, p):
     '''expressions : expression
@@ -170,6 +170,9 @@ class VsopParser:
     if len(p) == 5:
       p[0] = Call(p[1], p[3])
     else:
+      print("wololo")
+      for e in p:
+        print(e)
       p[0] = Call(p[3], p[5], p[1])
 
   def p_args(self,p):
@@ -188,13 +191,13 @@ class VsopParser:
     p[0] = New(p[2])
 
   ## TODO messy here
-  def p_expression_variable(self, p):
-    '''expression : object_identifier'''
-    p[0] = p[1]
+  # def p_expression_variable(self, p):
+  #   '''expression : object_identifier'''
+  #   p[0] = p[1]
 
-  def p_expression_literal(self, p):
-    '''expression : literal'''
-    p[0] = p[1]
+  # def p_expression_literal(self, p):
+  #   '''expression : literal'''
+  #   p[0] = p[1]
 
   def p_literal(self,p):
     '''literal : integer_literal
@@ -206,10 +209,18 @@ class VsopParser:
     '''boolean_literal : true 
                        | false'''
     p[0] = p[1]
+
+  def p_expression_unit(self, p):
+    '''expression : lpar rpar'''
+    p[0] = UnitLiteral()
+
+  def p_expression_par(self, p):
+    '''expression : lpar expression rpar'''
+    p[0] = p[2]
   
   def p_expression(self, p):
-    '''expression : lpar rpar
-                  | lpar expression rpar
+    '''expression : object_identifier
+                  | literal
                   | block'''
     p[0] = p[1]
 
