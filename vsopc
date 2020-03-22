@@ -4,14 +4,18 @@
 #
 # VSOP Main
 #
+# VERSION:
+#   v1.0: original
+#   v2.0: handle parser
 #
 # -----------------------------------------------------------------------------
 
 __author__  = "Adrien and Kevin"
-__version__ = '1.0'
+__version__ = '2.0'
 
 import sys
-from vsop_lexer import VsopLexer
+from vsop_lexer import VsopLexer, LexicalError
+from vsop_parser import VsopParser, ParseError
 
 class Style:
     OK = '\033[92m'
@@ -49,35 +53,38 @@ def main(argv):
 
     for arg in argv:
         if arg == '-h':
-            print("vsop.py -lex <inputfile>")
+            print("vsop.py -lex | -parse <inputfile>")
             exit()
         elif arg in ("-lex", "--lexer"):
             mode = 1
+        elif arg in ("-parse", "--parser"):
+            mode = 2
         else:
             files.append(arg)
 
-    if mode != 1:
-        print(Style.WARNING + "The only available for now is the lexer"
+    if mode == 0:
+        print(Style.WARNING + "You must use one option"
             + Style.ENDC)
-        print("vsop.py -lex <inputfile>")
+        print("Usage: vsop.py -lex | -parse <inputfile>")
         exit(1)
     if not files:
         print(Style.WARNING + "You must provide at least one file" + Style.ENDC)
-        print("vsop.py -lex <inputfile>")
+        print("Usage: vsop.py -lex <inputfile>")
         exit(1)
 
     for f in files:
         with open(f, 'r') as file:
-            input = file.read()
+            text = file.read()
+            file.close()
 
-        # well... no other option for the moment so go lexer i choose you
-        lexer = VsopLexer()
-        tokens,errors = lexer.tokenize(input)
-        print_error(errors,f)
-        print_token(tokens)
-
-        if errors:
-            exit(1)
+            if mode == 1:
+                lexer = VsopLexer()
+                tokens,errors = lexer.tokenize(text)
+                print_error(errors,f)
+                print_token(tokens)
+            elif mode == 2:
+                parser = VsopParser()
+                prog, errors = parser.parse(text)
 
 
 if __name__ == "__main__":

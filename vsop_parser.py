@@ -11,6 +11,9 @@
 #   https://stackoverflow.com/questions/38262552/how-to-encapsulate-the-lex-and-yacc-of-ply-in-two-seperate-class
 #   https://github.com/andfelzapata/python-ply-mini-java/blob/master/parser.py
 #
+# VERSION:
+#   v1.0: original
+#
 # -----------------------------------------------------------------------------
 __author__  = "Adrien and Kevin"
 __version__ = '1.0'
@@ -21,7 +24,7 @@ from vsop_lexer import *
 from vsop_ast import *
 
 class ParseError(Exception):
-  def __init__(self, line, column, message):
+  def __init__(self, line, column, message, token=None, expected=None):
     self.line = line
     self.column = column
     self.message = message
@@ -233,9 +236,10 @@ class VsopParser:
 
 ### ERROR HANDLING
   def p_error(self, p):
-    print("error")
-    print(p)
-    pass
+    if p:
+      self.errors.append(ParseError(p.lineno, p.column, "Unexpected token"))
+    # else:
+    #   self.errors.append(ParseError(p.lineno, p.column, "Unexpected EOF"))
 
 
 ### MAIN

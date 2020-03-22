@@ -13,10 +13,11 @@
 #   v1.0: original
 #   v1.1: fix comment error handling
 #   v2.0: simplify code to be handle by the parser
+#   v2.1: add token and input methods
 #
 # -----------------------------------------------------------------------------
 __author__  = "Adrien and Kevin"
-__version__ = '2.0'
+__version__ = '2.1'
 
 import ply.lex as lex
 from ply.lex import TOKEN
