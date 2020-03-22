@@ -85,6 +85,7 @@ def main(argv):
             elif mode == 2:
                 parser = VsopParser()
                 prog, errors = parser.parse(text)
+                print(prog)
 
 
 if __name__ == "__main__":
