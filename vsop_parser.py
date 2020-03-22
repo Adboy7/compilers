@@ -9,6 +9,7 @@
 #   https://www.dabeaz.com/ply/ply.html#ply_nn24
 #   http://www.matthieuamiguet.ch/pages/compilateurs
 #   https://stackoverflow.com/questions/38262552/how-to-encapsulate-the-lex-and-yacc-of-ply-in-two-seperate-class
+#   https://github.com/andfelzapata/python-ply-mini-java/blob/master/parser.py
 #
 # -----------------------------------------------------------------------------
 __author__  = "Adrien and Kevin"
@@ -30,6 +31,18 @@ class ParseError(Exception):
 
 
 class VsopParser:
+  precedence = (
+    ('right', 'assign'),
+    ('left', 'and'),
+    ('right', 'not'),
+    ('nonassoc', 'equal','lower','lower_equal'),
+    ('left', 'plus', 'minus'),
+    ('left', 'times', 'div'),
+    ('right', 'isnull', 'unary_minus'),
+    ('right', 'pow'),
+    ('left', 'dot'),
+  )
+
   def __init__(self, debug=False):
     self.tokens = VsopLexer.tokens
     self.lexer = VsopLexer()
@@ -137,6 +150,7 @@ class VsopParser:
   def p_expression_let(self, p):
     '''expression : let object_identifier colon type in expression
                   | let object_identifier colon type assign expression in expression'''
+
     if len(p) == 7:
       p[0] = Let(p[2], p[4], p[6])
     else:
@@ -148,7 +162,7 @@ class VsopParser:
 
   def p_expression_unop(self, p):
     '''expression : not expression
-                  | minus expression
+                  | minus expression %prec unary_minus
                   | isnull expression'''
     p[0] = UnOp(p[1], p[2])
 
@@ -187,29 +201,20 @@ class VsopParser:
     '''expression : new type_identifier'''
     p[0] = New(p[2])
 
-  ## TODO messy here
-  # def p_expression_variable(self, p):
-  #   '''expression : object_identifier'''
-  #   p[0] = p[1]
-
-  # def p_expression_literal(self, p):
-  #   '''expression : literal'''
-  #   p[0] = p[1]
-
   def p_literal(self,p):
     '''literal : integer_literal
                | string_literal
                | boolean_literal'''
-    p[0] = p[1]
+    p[0] = Literal(p[1])
 
   def p_boolean_literal(self,p):
     '''boolean_literal : true 
                        | false'''
-    p[0] = p[1]
+    p[0] = Literal(p[1])
 
   def p_expression_unit(self, p):
     '''expression : lpar rpar'''
-    p[0] = UnitLiteral()
+    p[0] = Literal("()")
 
   def p_expression_par(self, p):
     '''expression : lpar expression rpar'''
@@ -220,7 +225,6 @@ class VsopParser:
                   | literal
                   | block'''
     p[0] = p[1]
-
    
   def p_empty(self, p):
     'empty :'

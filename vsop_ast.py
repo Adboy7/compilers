@@ -19,7 +19,7 @@ class Node:
 class Program(Node):
   def __init__(self, list_class=[]):
     self.list_class = list_class
-    
+
   def add(self, cl):
     self.list_class.append(cl)
 
@@ -40,6 +40,7 @@ class Class(Node):
            f"[{', '.join([str(x) for x in self.fields])}], " \
            f"[{', '.join([str(x) for x in self.methods])}])"
 
+
 class Field(Node):
   def __init__(self, name, type, init_expr=None):
     self.name = name
@@ -47,7 +48,9 @@ class Field(Node):
     self.init_expr = init_expr
   
   def __str__(self):
-    return f"Field({self.name}, {self.type})"
+    return f"Field({self.name}, " \
+           f"{self.type}" \
+           f"{', ' + str(self.init_expr) if self.init_expr else ''})"
 
 
 class Method(Node):
@@ -61,24 +64,19 @@ class Method(Node):
     return f"Method({self.name}, " \
            f"[{', '.join([str(x) for x in self.formals])}], " \
            f"{self.ret_type}, " \
-           f"[{', '.join([str(x) for x in self.block])}])"
+           f'''{str(self.block[0]) 
+              if len(self.block) == 1 
+              else '[' + ', '.join([str(x) for x in self.block]) + ']'})''' #OMG
 
 
+# Useless
 class Type(Node):
   def __init__(self, type):
     self.type = type
 
-# class Int32(Type):
-#   pass
+  def __str__(self):
+    return f"{self.type}"
 
-# class Bool(Type):
-#   pass
-
-# class String(Type):
-#   pass
-
-# class Unit(Type):
-#   pass
 
 class Formal(Node):
   def __init__(self, name, type):
@@ -86,7 +84,8 @@ class Formal(Node):
     self.type = type
   
   def __str__(self):
-    return f"{self.name}:{self.type}"
+    return f"{self.name} : {self.type}"
+
 
 class If(Node):
   def __init__(self, cond_expr, then_expr, else_expr=None):
@@ -99,6 +98,7 @@ class If(Node):
            f"{self.then_expr}" \
            f"{', ' + str(self.else_expr) if self.else_expr else ''})"
 
+
 class While(Node):
   def __init__(self, cond_expr, body_expr):
     self.cond_expr = cond_expr
@@ -106,6 +106,7 @@ class While(Node):
 
   def __str__(self):
     return f"While({self.cond_expr}, {self.body_expr})"
+
 
 class Let(Node):
   def __init__(self, name, type, scope_expr, init_expr=None):
@@ -128,10 +129,15 @@ class Assign(Node):
   def __str__(self):
     return f"Assign({self.name}, {self.expr})"
 
+
 class UnOp(Node):
   def __init__(self, op, expr):
     self.op = op
     self.expr = expr
+
+  def __str__(self):
+    return f"UnOp({self.op}, {self.expr})"
+
 
 class BinOp(Node):
   def __init__(self, op, left_expr, right_expr):
@@ -142,6 +148,7 @@ class BinOp(Node):
   def __str__(self):
     return f"BinOp({self.op}, {self.left_expr}, {self.right_expr})"
 
+
 class Call(Node):
   def __init__(self, method_name, expr_list=[], obj_expr="self"):
     self.obj_expr = obj_expr
@@ -149,7 +156,10 @@ class Call(Node):
     self.expr_list = expr_list
 
   def __str__(self):
-    return f"Call({self.obj_expr}, {self.method_name})"
+    return f"Call({self.obj_expr}, " \
+           f"{self.method_name}, " \
+           f"[{', '.join([str(x) for x in self.expr_list])}])"
+
 
 class New(Node):
   def __init__(self, type_name):
@@ -158,21 +168,10 @@ class New(Node):
   def __str__(self):
     return f"New({self.type_name})"
 
-class IntegerLiteral(Node):
+
+class Literal(Node):
   def __init__(self, literal):
     self.literal = literal
 
-class StringLiteral(Node):
-  def __init__(self, literal):
-    self.literal = literal
-
-class BoolLiteral(Node):
-  def __init__(self, literal):
-    self.literal = literal
-
-class UnitLiteral(Node):
-  pass
-
-class Block(Node):
-  def __init__(self):
-    self.expr = []
+  def __str__(self):
+    return str(self.literal)
