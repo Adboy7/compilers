@@ -1,2 +1,4 @@
-class fistLetterIsNotUpperCase {
+class C {
+    // Fields should begin with lower-case letter
+    I : int32;
 }

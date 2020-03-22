@@ -86,12 +86,15 @@ def main(argv):
                     exit(1)
             elif mode == 2:
                 parser = VsopParser()
-                prog, errors = parser.parse(text)
-                for e in errors:
-                    print(e)
-                print(prog)
-                if errors:
+                prog, parse_errors, lex_errors = parser.parse(text)
+
+                print_error(lex_errors,f)
+                for e in parse_errors:
+                    print(f"{f}:{e}", file=sys.stderr)
+                
+                if parse_errors or lex_errors:
                     exit(1)
+                print(prog)
 
 
 if __name__ == "__main__":

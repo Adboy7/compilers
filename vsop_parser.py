@@ -24,12 +24,14 @@ from vsop_lexer import *
 from vsop_ast import *
 
 class ParseError(Exception):
-  def __init__(self, line, column, message, token=None, expected=None):
+  def __init__(self, message, line=None, column=None, token=None, expected=None):
     self.line = line
     self.column = column
     self.message = message
 
   def __str__(self):
+    if not self.line or not self.column:
+      return f": syntax error: {self.message}"
     return f"{self.line}:{self.column}: syntax error: {self.message}"
 
 
@@ -47,14 +49,14 @@ class VsopParser:
   )
 
   def __init__(self, debug=False):
+    self.errors = []
     self.tokens = VsopLexer.tokens
     self.lexer = VsopLexer()
-    self.parser = yacc.yacc(module=self, debug=debug, errorlog=yacc.NullLogger())   
+    self.parser = yacc.yacc(module=self, debug=debug, errorlog=yacc.NullLogger()) 
 
   def parse(self, text):
-    self.errors = []
     result = self.parser.parse(text, lexer=self.lexer)
-    return result, self.errors
+    return result, self.errors, self.lexer.errors
 
 ### GRAMMAR RULES
   def p_program(self, p):
@@ -237,22 +239,30 @@ class VsopParser:
 ### ERROR HANDLING
   def p_class_grammar_error(self, p):
     '''class_grammar : class error lbrace class_body rbrace'''
-    self.errors.append(ParseError(p.lineno, p.column, "Unexpected class name"))
+    error = self.errors.pop()
+    error.message = "Unexpected class name"
+    self.errors.append(error)
 
-  def p_field_error_semicolon(self, p):
+  def p_field_error_missing_semicolon(self, p):
     '''field : object_identifier colon type error
              | object_identifier colon type assign expression error'''
-    self.errors.append(ParseError(p.lineno, p.column, "Missing semicolon"))
+    error = self.errors.pop()
+    error.message = "Missing semicolon"
+    self.errors.append(error)
 
-  
+  def p_field_error_missing_type(self, p):
+    '''field : object_identifier error semicolon
+             | object_identifier error assign expression semicolon'''
+    error = self.errors.pop()
+    error.message = "Missing field type"
+    self.errors.append(error)
+ 
 
   def p_error(self, p):
     if not p:
-      self.errors.append(ParseError(p.lineno, p.column, "Unexpected EOF"))
+      self.errors.append(ParseError("Unexpected EOF"))
     else:
-      pass
-    # else:
-    #   self.errors.append(ParseError(p.lineno, p.column, "Unexpected EOF"))
+      self.errors.append(ParseError("Unexpected Token", line=p.lineno, column=p.column))
 
 
 ### MAIN
@@ -261,5 +271,9 @@ if __name__ == "__main__":
   import sys
   text = open(sys.argv[1], 'r').read()
   parser = VsopParser(debug=False)
-  result, errors = parser.parse(text)
+  result, errors, lex_errors = parser.parse(text)
+  for e in lex_errors:
+    print(e)
+  for e in errors:
+    print(e)
   print(result)
