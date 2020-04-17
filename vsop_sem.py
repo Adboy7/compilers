@@ -43,11 +43,11 @@ class VsopSem:
         defined_classes[c.name] = c
     return defined_classes
 
-  def check_inheritance(self, classes):
+  def check_inheritance(self, program):
     # si on envoie TOUTES les classes du prog il peut y avoir une erreur de cycle pour une classe redéfinie
     # peut etre mieux de n'envoyer que les defined_classes?
     class_checked = []
-    for c in classes:
+    for c in program.list_class:
       child_name = c.name
       parent_name = c.parent
       already_seen = [child_name]
@@ -56,10 +56,13 @@ class VsopSem:
         if parent_name in class_checked or parent_name == "Object":
           for seen in already_seen:
             class_checked.append(seen)
+          break
         elif parent_name in already_seen:
           self.errors.append(SemError(f"class {child_name} cannot extend child class {parent_name}.", line=0, column=0))
-        if c.name not in self.defined_classes:
-          self.errors.append(SemError(f"class {c.name} not defined", line=0, column=0))
+          break
+        if parent_name not in self.defined_classes:
+          self.errors.append(SemError(f"class {parent_name} not defined", line=0, column=0))
+          break
         else:
           child_name = parent_name
           parent_name = self.defined_classes[parent_name].name
@@ -80,9 +83,12 @@ class VsopSem:
     self.program = program
     self.defined_classes = {}
 
-    self.check_redefine(self.program)
+    print("check_redefine")
+    self.defined_classes = self.check_redefine(self.program)
+    print("check_inheritance")
     self.check_inheritance(self.program)
 
+    print("DONE")
     return self.program, self.errors
 
 

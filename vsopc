@@ -60,6 +60,8 @@ def main(argv):
             mode = 1
         elif arg in ("-parse", "--parser"):
             mode = 2
+        elif arg in ("-check"):
+            mode = 3
         else:
             files.append(arg)
 
@@ -95,7 +97,8 @@ def main(argv):
                 
                 if parse_errors or lex_errors:
                     exit(1)
-                print(prog)
+                if mode == 2:
+                    print(prog)
 
             if mode >= 3:
                 sem_analyser = VsopSem()
