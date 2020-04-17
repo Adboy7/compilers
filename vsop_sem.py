@@ -18,7 +18,7 @@ __version__ = '1.0'
 from vsop_ast import *
 
 class SemError():
-  def __init__(self, message, line=None, column=None, token=None, expected=None):
+  def __init__(self, message, line=None, column=None):
     self.line = line
     self.column = column
     self.message = message
@@ -34,14 +34,37 @@ class VsopSem:
     self.program = None
 
   def check_redefine(self, program):
+    # seule la première classe du fichier est considérée comme définie, les redéfinitions ne sont pas enregistrées
+    defined_classes = {"Object": None}
     for c in program.list_class:
-      if c.name in self.defined_classes:
-        self.errors.append(SemError("Class already defined", line=0, column=0))
+      if c.name in defined_classes:
+        self.errors.append(SemError(f"Class {c.name} already defined", line=0, column=0))
       else:
-        self.defined_classes[c.name] = c
+        defined_classes[c.name] = c
+    return defined_classes
 
-  def check_inheritance(self, class_):
-    pass
+  def check_inheritance(self, classes):
+    # si on envoie TOUTES les classes du prog il peut y avoir une erreur de cycle pour une classe redéfinie
+    # peut etre mieux de n'envoyer que les defined_classes?
+    class_checked = []
+    for c in classes:
+      child_name = c.name
+      parent_name = c.parent
+      already_seen = [child_name]
+
+      while True:
+        if parent_name in class_checked or parent_name == "Object":
+          for seen in already_seen:
+            class_checked.append(seen)
+        elif parent_name in already_seen:
+          self.errors.append(SemError(f"class {child_name} cannot extend child class {parent_name}.", line=0, column=0))
+        if c.name not in self.defined_classes:
+          self.errors.append(SemError(f"class {c.name} not defined", line=0, column=0))
+        else:
+          child_name = parent_name
+          parent_name = self.defined_classes[parent_name].name
+          already_seen.append(child_name)
+          
 
   def check_fields(self, class_):
     pass
@@ -58,6 +81,7 @@ class VsopSem:
     self.defined_classes = {}
 
     self.check_redefine(self.program)
+    self.check_inheritance(self.program)
 
     return self.program, self.errors
 

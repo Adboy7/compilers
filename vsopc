@@ -16,6 +16,7 @@ __version__ = '2.0'
 import sys
 from vsop_lexer import VsopLexer, LexicalError
 from vsop_parser import VsopParser, ParseError
+from vsop_sem import VsopSem, SemError
 
 class Style:
     OK = '\033[92m'
@@ -84,7 +85,7 @@ def main(argv):
                 print_token(tokens)
                 if errors:
                     exit(1)
-            elif mode == 2:
+            elif mode >= 2:
                 parser = VsopParser()
                 prog, parse_errors, lex_errors = parser.parse(text)
 
@@ -95,6 +96,13 @@ def main(argv):
                 if parse_errors or lex_errors:
                     exit(1)
                 print(prog)
+
+            if mode >= 3:
+                sem_analyser = VsopSem()
+                analysed, sem_errors = sem_analyser.semantic_analysis(prog)
+                for e in sem_errors:
+                    print(f"{f}:{e}", file=sys.stderr)
+                # print(analysed)
 
 
 if __name__ == "__main__":
