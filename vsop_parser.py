@@ -31,7 +31,7 @@ class ParseError():
 
   def __str__(self):
     if not self.line or not self.column:
-      return f": syntax error: {self.message}"
+      return f"syntax error: {self.message}"
     return f"{self.line}:{self.column}: syntax error: {self.message}"
 
 
@@ -55,6 +55,7 @@ class VsopParser:
     self.parser = yacc.yacc(module=self, debug=debug, errorlog=yacc.NullLogger()) 
 
   def parse(self, text):
+    self.errors = []
     result = self.parser.parse(text, lexer=self.lexer)
     return result, self.errors, self.lexer.errors
 

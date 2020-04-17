@@ -16,7 +16,10 @@ __author__  = "Adrien and Kevin"
 __version__ = '1.0'
 
 class Node:
-  pass
+  # TODO ajouter position au parse
+  def __init__(self, line, column):
+    self.line = line
+    self.column = column
 
 
 class Program(Node):

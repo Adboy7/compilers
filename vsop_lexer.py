@@ -147,6 +147,14 @@ class VsopLexer():
     return t
 
   def tokenize(self, text):
+    self.errors = []
+    self.last_lf_lexpos = -1
+    self.comment_level = []
+    self.string = ''
+    self.last_lexpos = 0
+    self.last_lineno = 0
+    self.last_column = 0
+    
     tokens = []
     self.lexer.input(text)
     while True:
@@ -265,17 +273,6 @@ class VsopLexer():
     except ValueError:
       self.errors.append(LexicalError(t.lineno, self.find_column(t),
         "Invalid integer literal"))
-    
-  # @TOKEN(r'0b' + alphanum + r'*')
-  # def t_bin_integer_literal(self, t):
-  #   t.type = 'integer_literal'
-  #   try:
-  #     t.value = int(t.value[2:], 2)
-  #     return t
-  #   except ValueError:
-  #     self.errors.append(LexicalError(t.lineno, self.find_column(t),
-  #           "Invalid integer literal"))
-  
 
   @TOKEN(alphanum + r'+')
   def t_integer_literal(self, t):
