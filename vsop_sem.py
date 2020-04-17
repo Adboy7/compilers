@@ -69,11 +69,50 @@ class VsopSem:
           already_seen.append(child_name)
           
 
-  def check_fields(self, class_):
-    pass
+  def check_fields(self, program):
+    for c in program.list_class:
+      if(c.fields):
+        already_seen=[]
+        for field in c.fields:
+          print(field.name)
+          #check if fiel = self
+          if(field.name == 'self'):
+            self.errors.append(SemError(f"a field named \"self\" is forbidden""", line=0, column=0))
+            break
+          #check redefinition of field
+          if(field.name in already_seen):
+            #NEED COLUMN AND LIE OF FIRST DEFINED
+            #is this good ? idk
+            self.errors.append(SemError(f"redefinition of field {field.name}, first defined at : """, line=0, column=0))
+            break
+          already_seen.append(field.name)
+           
 
-  def check_methods(self, class_):
-    pass
+  def check_methods(self, program):
+    is_main_class=False
+    is_main_method=False 
+    for c in program.list_class:
+      if(c.methods):
+        
+        if(c.name == "Main"):
+          is_main_class=True
+        
+        for method in c.methods:
+          if(is_main_class and method.name == "main"):
+            is_main_method = True
+          
+          #check if multiple formals with the same name
+          formal_already_seen=[]
+          for formal in method.formals:
+            if(formal.name in formal_already_seen):
+              self.errors.append(SemError(f"the formal name \"{formal.name}\" is used multiple times in the method \"{method.name}\"", line=0, column=0))
+              break
+            formal_already_seen.append(formal.name)
+
+    #if is_main_method is false then there is not main method in the Main class
+    if(not is_main_method):
+      self.errors.append(SemError(f"the Main class should have a main method", line=0, column=0))
+
 
   def check_expression(self, class_):
     pass
@@ -87,6 +126,11 @@ class VsopSem:
     self.defined_classes = self.check_redefine(self.program)
     print("check_inheritance")
     self.check_inheritance(self.program)
+    print("===================")
+    print("check_field")
+    self.check_fields(self.program)
+    print("check method")
+    self.check_methods(self.program)
 
     print("DONE")
     return self.program, self.errors
