@@ -174,11 +174,11 @@ class VsopSem:
       if express.op == "not":
         if self.check_expression(express.expr) != "bool":
           self.errors.append(SemError(f'operation \"{express.op}\" can be done only on type boolean', line=0, column=0))
-        return bool
+        return "bool"
       if express.op == "-":
         if self.check_expression(express.expr) != "int32":
           self.errors.append(SemError(f'operation \"{express.op}\" can be done only on type int32', line=0, column=0))
-
+        return "int32"
     if isinstance(express, While):
       if self.check_expression(express.cond_expr) != "bool":
         self.errors.append(SemError(f'the condition of the while is not a boolean', line=0, column=0))
