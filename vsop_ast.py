@@ -34,7 +34,7 @@ class Program(Node):
 
 
 class Class(Node):
-  def __init__(self, name, fields, methods, parent="Object"):
+  def __init__(self, name, fields=[], methods=[], parent="Object"):
     self.name = name
     self.fields = fields
     self.methods = methods
@@ -236,3 +236,5 @@ class Literal(Node):
 
   def __str__(self):
     return str(self.literal)
+
+object_class = Class("Object", [], [], parent=None)

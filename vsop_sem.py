@@ -33,62 +33,93 @@ class VsopSem:
     self.errors = []
     self.program = None
 
-  def check_redefine(self, program):
+  def check_redefine(self):
     # seule la première classe du fichier est considérée comme définie, les redéfinitions ne sont pas enregistrées
-    defined_classes = {"Object": None}
-    for c in program.list_class:
-      if c.name in defined_classes:
-        self.errors.append(SemError(f"Class {c.name} already defined", line=0, column=0))
+    ''' records defined classes and finds duplicates '''
+    classes_table_pointer = {object_class.name: object_class}
+    for c in self.program.list_class:
+      if c.name in classes_table_pointer:
+        self.errors.append(SemError(f"redefinition of class {c.name}", line=1, column=1))
       else:
-        defined_classes[c.name] = c
-    return defined_classes
+        classes_table_pointer[c.name] = c
+    self.program.classes_table_pointer = classes_table_pointer
 
-  def check_inheritance(self, program):
+  def check_inheritance(self):
+    '''checks for cycles and undefined extending class'''
     # si on envoie TOUTES les classes du prog il peut y avoir une erreur de cycle pour une classe redéfinie
-    # peut etre mieux de n'envoyer que les defined_classes?
+    # peut etre mieux de n'envoyer que les classes_table_pointer?
+
+    # ne doit pas etre dans la boucle qui suit sinon elle sera notifiée plusieurs fois
+    # if parent is not defined then error
+    for c in self.program.list_class:
+       if c.parent not in self.program.classes_table_pointer:
+          self.errors.append(SemError(f"class {c.parent} not defined", line=1, column=1))
+          # here we fool the class, extending Object class for no further error
+          c.parent = object_class.name
+    
+    # classes we know correct
     class_checked = []
-    for c in program.list_class:
-      child_name = c.name
-      parent_name = c.parent
-      already_seen = [child_name]
+
+    # for each class in file, let's browse their inheritance to find cycles
+    for c in self.program.list_class:
+      child = c
+      parent = self.program.classes_table_pointer[child.parent]
+      # records pointer to parent class
+      c.parent_pointer = parent
+      already_seen = [child.name]
 
       while True:
-        if parent_name in class_checked or parent_name == "Object":
+        # if parent is ok then child is ok
+        if child.parent in class_checked or child.parent == object_class.name:
           for seen in already_seen:
             class_checked.append(seen)
           break
-        elif parent_name in already_seen:
-          self.errors.append(SemError(f"class {child_name} cannot extend child class {parent_name}.", line=0, column=0))
+        # if parent is a child's ancestor then error
+        elif child.parent in already_seen:
+          self.errors.append(SemError(f"class {c.parent} cannot extend child class {c.name}.", line=1, column=1))
           break
-        if parent_name not in self.defined_classes:
-          self.errors.append(SemError(f"class {parent_name} not defined", line=0, column=0))
-          break
+        # if parent inherits another class
         else:
-          child_name = parent_name
-          parent_name = self.defined_classes[parent_name].name
-          already_seen.append(child_name)
+          child = parent
+          parent = self.program.classes_table_pointer[child.parent]
+          already_seen.append(child.name)
           
 
   def check_fields(self, class_):
     pass
 
   def check_methods(self, class_):
-    defined_methods = {}
+    ''' records methods, checks for duplicates and correct overrides '''
 
+    # first check parent methods prior to check method inheritance
+    if not hasattr(class_.parent_pointer, "methods_table_pointer"):
+      self.check_methods(class_.parent_pointer)
+
+    class_.methods_table_pointer = {}
+
+    
     for method in class_.methods:
-      if method.name in defined_methods:
-        self.errors.append(SemError(f"method {method.name} already defined", line=0, column=0))
-      else:
-        defined_methods[method.name] = method
+      # save class in method
+      method.class_pointer = class_
 
-      # check return type 
-      # check params
-      defined_formals = {"self": class_}
+      # checks for redefinition
+      if method.name in class_.methods_table_pointer:
+        self.errors.append(SemError(f"redefinition of method {method.name} in class {class_.name}", line=1, column=1))
+      else:
+        class_.methods_table_pointer[method.name] = method
+
+      method.formals_table_pointer = {"self": class_}
       for formal in method.formals:
-          if formal.name in defined_formals:
-            self.errors.append(SemError(f"formal {formal.name} already defined", line=0, column=0))
+          # save method in formal
+          formal.method = method
+
+          # check params redefinition
+          if formal.name in method.formals_table_pointer:
+            self.errors.append(SemError(f"redefinition of parameter {formal.name} in method {method.name}", line=1, column=1))
           else:
-            defined_formals[formal.name] = formal
+            method.formals_table_pointer[formal.name] = formal
+      
+      # check return type
 
       # check overridden methods
       
@@ -102,12 +133,11 @@ class VsopSem:
   def semantic_analysis(self, program):
     self.errors = []
     self.program = program
-    self.defined_classes = {}
 
     print("check_redefine")
-    self.defined_classes = self.check_redefine(self.program)
+    self.check_redefine()
     print("check_inheritance")
-    self.check_inheritance(self.program)
+    self.check_inheritance()
 
     print("DONE")
     return self.program, self.errors
