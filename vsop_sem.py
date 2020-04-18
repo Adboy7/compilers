@@ -73,9 +73,30 @@ class VsopSem:
     pass
 
   def check_methods(self, class_):
-    pass
+    defined_methods = {}
+
+    for method in class_.methods:
+      if method.name in defined_methods:
+        self.errors.append(SemError(f"method {method.name} already defined", line=0, column=0))
+      else:
+        defined_methods[method.name] = method
+
+      # check return type 
+      # check params
+      defined_formals = {"self": class_}
+      for formal in method.formals:
+          if formal.name in defined_formals:
+            self.errors.append(SemError(f"formal {formal.name} already defined", line=0, column=0))
+          else:
+            defined_formals[formal.name] = formal
+
+      # check overridden methods
+      
 
   def check_expression(self, class_):
+    pass
+
+  def check_main(self, program):
     pass
 
   def semantic_analysis(self, program):
