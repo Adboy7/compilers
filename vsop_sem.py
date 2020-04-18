@@ -74,7 +74,6 @@ class VsopSem:
       if(c.fields):
         already_seen=[]
         for field in c.fields:
-          print(field.name)
           #check if fiel = self
           if(field.name == 'self'):
             self.errors.append(SemError(f"a field named \"self\" is forbidden""", line=0, column=0))
@@ -86,6 +85,11 @@ class VsopSem:
             self.errors.append(SemError(f"redefinition of field {field.name}, first defined at : """, line=0, column=0))
             break
           already_seen.append(field.name)
+
+          if field.init_expr:
+            print(type(field.init_expr))
+            self.check_expression(field.init_expr)
+
            
 
   def check_methods(self, program):
@@ -113,9 +117,87 @@ class VsopSem:
     if(not is_main_method):
       self.errors.append(SemError(f"the Main class should have a main method", line=0, column=0))
 
+  def check_type(self,ctype,value):
+    if(ctype == "bool"):
+      print(type(value))
+      if value == "true":
+        print("what")
+        self.errors.append(SemError(f"error", line=0, column=0))
 
-  def check_expression(self, class_):
-    pass
+    if(type == "int32"):
+      print(value)
+    
+  def check_expression(self, express):
+
+    if isinstance(express, Literal):
+      
+      if isinstance(express.literal, Literal):
+        if express.literal.literal == "true" or express.literal.literal == "false":
+          print("bool")
+          return "bool"
+
+      elif isinstance(express.literal, str):
+      
+        if express.literal == "()":
+          return "unit"
+        elif express.literal[0] == '"' and express.literal[-1]=='"':
+          return "string"
+
+      elif isinstance(express.literal, int):
+        if(express.literal<-2147483648 or express.literal>2147483647):
+          return "error"
+        return "int32"
+
+      else:
+        pass
+        #error
+    
+    if isinstance(express, BinOp):
+      if express.op == "+" or express.op == "-"  or express.op == "*"  or express.op == "/" or express.op == "^":
+        if self.check_expression(express.left_expr) != "int32" or self.check_expression(express.right_expr) != "int32":
+          self.errors.append(SemError(f'operation \"{express.op}\" can be done only between type int32', line=0, column=0))
+        return "int32"
+      if express.op == "<=" or express.op == "<":
+        if self.check_expression(express.left_expr) != "int32" or self.check_expression(express.right_expr) != "int32":
+          self.errors.append(SemError(f'operation \"{express.op}\" can be done only between type int32', line=0, column=0))
+        return "bool"
+      if express.op == "=":
+        if self.check_expression(express.left_expr) != self.check_expression(express.right_expr):
+          self.errors.append(SemError(f'operation \"{express.op}\" can be done only between expression of the same type', line=0, column=0))
+        return "bool"
+      if express.op == "and":
+        if self.check_expression(express.left_expr) != "bool" or self.check_expression(express.right_expr) != "bool":
+          self.errors.append(SemError(f'operation \"{express.op}\" can be done only between type boolean', line=0, column=0))
+        return "bool"
+
+    if isinstance(express, UnOp):
+      if express.op == "not":
+        if self.check_expression(express.expr) != "bool":
+          self.errors.append(SemError(f'operation \"{express.op}\" can be done only on type boolean', line=0, column=0))
+        return bool
+      if express.op == "-":
+        if self.check_expression(express.expr) != "int32":
+          self.errors.append(SemError(f'operation \"{express.op}\" can be done only on type int32', line=0, column=0))
+
+    if isinstance(express, While):
+      if self.check_expression(express.cond_expr) != "bool":
+        self.errors.append(SemError(f'the condition of the while is not a boolean', line=0, column=0))
+      return "unit"
+
+
+    if isinstance(express, If):
+      print(type(express.cond_expr))
+      if self.check_expression(express.cond_expr) != "bool":
+        self.errors.append(SemError(f'the condition of the if is not a boolean', line=0, column=0))
+      
+    if isinstance(express, Let):
+      print(express.init_expr)
+      print(type(express.init_expr))
+      if(express.init_expr):
+        if express.type != self.check_expression(express.init_expr):
+            self.errors.append(SemError(f'the value of \"{express.name}\" is not of type \"{express.type}\"', line=0, column=0))
+
+
 
   def semantic_analysis(self, program):
     self.errors = []
