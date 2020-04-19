@@ -100,7 +100,7 @@ class VsopSem:
     if not class_.name == object_class.name and not hasattr(class_.parent_pointer, "fields_table_pointer"):
       self.check_fields(class_.parent_pointer)
 
-    class_.fields_table_pointer = {}
+    class_.fields_table_pointer = {"self": class_}
     for field in class_.fields:
       field.class_pointer = class_
 
@@ -120,15 +120,17 @@ class VsopSem:
       else:
         class_.fields_table_pointer[field.name] = field
 
-      # check init expr
+    # records parent fields in child class
+    if not class_.name == object_class.name:
+      for field_name in class_.parent_pointer.fields_table_pointer:
+        if not field_name in class_.fields_table_pointer:
+          class_.fields_table_pointer[field_name] = class_.parent_pointer.fields_table_pointer[field_name]
+    
+    # check init expr
+    for field in class_.fields:
       if field.init_expr:
         self.check_expression(field.init_expr)
 
-      # records parent fields in child class
-      if not class_.name == object_class.name:
-        for field_name in class_.parent_pointer.fields_table_pointer:
-          if not field_name in class_.fields_table_pointer:
-            class_.fields_table_pointer[field_name] = class_.parent_pointer.fields_table_pointer[field_name]
 
   def check_methods(self, class_):
     ''' records methods, checks for duplicates and correct overrides '''
@@ -196,6 +198,11 @@ class VsopSem:
       for method_name in class_.parent_pointer.methods_table_pointer:
         if not method_name in class_.methods_table_pointer:
           class_.methods_table_pointer[method_name] = class_.parent_pointer.methods_table_pointer[method_name]
+
+    # check expressions in block
+    for method in class_.methods:
+      for expr in method.block:
+        self.check_expression(expr)
 
   def check_expression(self, expression):
     if isinstance(expression, Literal):
@@ -300,14 +307,14 @@ class VsopSem:
     self.errors = []
     self.program = program
 
-    print("check_redefine")
+    # print("check_redefine")
     self.check_redefine()
-    print("check_inheritance")
+    # print("check_inheritance")
     self.check_inheritance()
-    print("check_fields & check_methods")
+    # print("check_fields & check_methods")
     self.check_class_body()
     self.check_main()
-    print("DONE")
+    # print("DONE")
     return self.program, self.errors
 
 
