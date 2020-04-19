@@ -104,6 +104,10 @@ class VsopSem:
     for field in class_.fields:
       field.class_pointer = class_
 
+      # check type
+      self.check_expression(field.init_expr)
+      # TODO record le type
+
       # check if field = self
       if field.name == "self":
         self.errors.append(SemError(f"a field named \"self\" is forbidden""", line=1, column=1))
@@ -126,7 +130,6 @@ class VsopSem:
           if not field_name in class_.fields_table_pointer:
             class_.fields_table_pointer[field_name] = class_.parent_pointer.fields_table_pointer[field_name]
 
-  
   def check_methods(self, class_):
     ''' records methods, checks for duplicates and correct overrides '''
     
@@ -143,6 +146,10 @@ class VsopSem:
       # save class in method
       method.class_pointer = class_
 
+      # check return type
+      self.check_expression(method.ret_type)
+      # TODO record le type
+
       # checks for redefinition
       if method.name in class_.methods_table_pointer:
         self.errors.append(SemError(f"redefinition of method {method.name} in class {class_.name}", line=1, column=1))
@@ -154,6 +161,10 @@ class VsopSem:
       for formal in method.formals:
           # save method in formal
           formal.method = method
+
+          # check formal type
+          self.check_expression(formal.type)
+          # TODO record le type
 
           if formal.name == "self":
             self.errors.append(SemError(f"a method named \"self\" is forbidden""", line=1, column=1))
@@ -175,6 +186,8 @@ class VsopSem:
         parent_method = class_.parent_pointer.methods_table_pointer[method_name]
         if len(child_method.formals_table_pointer) != len(parent_method.formals_table_pointer):
           self.errors.append(SemError(f"overriding method {method_name} with different signature", line=1, column=1))
+        if not child_method.ret_type == parent_method.ret_type:
+          self.errors.append(SemError(f"overriden method {method_name} returns {child_method.ret_type} but parent's method returns ({parent_method.ret_type})", line=1, column=1))
         
         # TODO check return type
     
@@ -186,12 +199,83 @@ class VsopSem:
 
   def check_expression(self, expression):
     if isinstance(expression, Literal):
-      self.check_expression_literal(expression)
+      return self.check_expression_literal(expression)
+    elif isinstance(expression, BinOp):
+      return self.check_expression_binop(expression)
+    elif isinstance(expression, UnOp):
+      return self.check_expression_unop(expression)
+    elif isinstance(expression, While):
+      return self.check_expression_while(expression)
+    elif isinstance(expression, If):
+      return self.check_expression_if(expression)
+    elif isinstance(expression, Let):
+      return self.check_expression_let(expression)
     else:
       print(f"another one {expression}")
 
   def check_expression_literal(self, expression):
-    print("handled literal")
+    print("literal")
+    if isinstance(expression.literal, Literal):
+      if expression.literal.literal == "true" or expression.literal.literal == "false":
+        print("bool")
+        return "bool"
+    elif isinstance(expression.literal, str):
+      if expression.literal == "()":
+        return "unit"
+      elif expression.literal[0] == '"' and expression.literal[-1]=='"':
+        return "string"
+    elif isinstance(expression.literal, int):
+      if(expression.literal<-2147483648 or expression.literal>2147483647):
+        return "error"
+      return "int32"
+
+  def check_expression_binop(self, expression):
+    print("binop")
+    if expression.op == "+" or expression.op == "-"  or expression.op == "*"  or expression.op == "/" or expression.op == "^":
+      if self.check_expression(expression.left_expr) != "int32" or self.check_expression(expression.right_expr) != "int32":
+        self.errors.append(SemError(f'operation \"{expression.op}\" can be done only between type int32', line=1, column=1))
+      return "int32"
+    if expression.op == "<=" or expression.op == "<":
+      if self.check_expression(expression.left_expr) != "int32" or self.check_expression(expression.right_expr) != "int32":
+        self.errors.append(SemError(f'operation \"{expression.op}\" can be done only between type int32', line=1, column=1))
+      return "bool"
+    if expression.op == "=":
+      if self.check_expression(expression.left_expr) != self.check_expression(expression.right_expr):
+        self.errors.append(SemError(f'operation \"{expression.op}\" can be done only between expression of the same type', line=1, column=1))
+      return "bool"
+    if expression.op == "and":
+      if self.check_expression(expression.left_expr) != "bool" or self.check_expression(expression.right_expr) != "bool":
+        self.errors.append(SemError(f'operation \"{expression.op}\" can be done only between type boolean', line=1, column=1))
+      return "bool"
+
+  def check_expression_unop(self, expression):
+    print("unnop")
+    if expression.op == "not":
+      if self.check_expression(expression.expr) != "bool":
+        self.errors.append(SemError(f'operation \"{expression.op}\" can be done only on type boolean', line=1, column=1))
+      return "bool"
+    if expression.op == "-":
+      if self.check_expression(expression.expr) != "int32":
+        self.errors.append(SemError(f'operation \"{expression.op}\" can be done only on type int32', line=1, column=1))
+      return "int32"
+
+  def check_expression_while(self, expression):
+    print("while")
+    if self.check_expression(expression.cond_expr) != "bool":
+      self.errors.append(SemError(f'the condition of the while is not a boolean', line=1, column=1))
+    return "unit"
+
+  def check_expression_if(self, expression):
+    print(type(expression.cond_expr))
+    if self.check_expression(expression.cond_expr) != "bool":
+      self.errors.append(SemError(f'the condition of the if is not a boolean', line=1, column=1))
+
+  def check_expression_let(self, expression):
+    print(expression.init_expr)
+    print(type(expression.init_expr))
+    if(expression.init_expr):
+      if expression.type != self.check_expression(expression.init_expr):
+        self.errors.append(SemError(f'the value of \"{expression.name}\" is not of type \"{expression.type}\"', line=0, column=0))
 
   def check_main(self):
     main_class = None
