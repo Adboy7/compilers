@@ -144,6 +144,7 @@ class VsopSem:
       self.check_methods(class_.parent_pointer)
 
     class_.methods_table_pointer = {}
+
     for method in class_.methods:
       # save class in method
       method.class_pointer = class_
@@ -160,6 +161,8 @@ class VsopSem:
 
       # method.formals_table_pointer = {"self": class_}
       method.formals_table_pointer = {}
+      method.local_variables_table_pointer={}
+
       for formal in method.formals:
           # save method in formal
           formal.method = method
@@ -202,9 +205,16 @@ class VsopSem:
     # check expressions in block
     for method in class_.methods:
       for expr in method.block:
+        expr.method=method
+        print("oui")
         self.check_expression(expr)
 
   def check_expression(self, expression):
+
+    
+
+    print(type(expression))
+    
     if isinstance(expression, Literal):
       return self.check_expression_literal(expression)
     elif isinstance(expression, BinOp):
@@ -217,6 +227,10 @@ class VsopSem:
       return self.check_expression_if(expression)
     elif isinstance(expression, Let):
       return self.check_expression_let(expression)
+    elif isinstance(expression, Assign):
+      return self.check_expression_assign(expression)
+    elif isinstance(expression, Call):
+      return self.check_expression_call(expression)
     else:
       print(f"another one {expression}")
 
@@ -240,6 +254,12 @@ class VsopSem:
 
   def check_expression_binop(self, expression):
     print("binop")
+    if hasattr(expression, 'method'):
+      expression.left_expr.method = expression.method
+
+    if hasattr(expression, 'method'):
+      expression.left_expr.method = expression.method
+  
     if expression.op == "+" or expression.op == "-"  or expression.op == "*"  or expression.op == "/" or expression.op == "^":
       if self.check_expression(expression.left_expr) != "int32" or self.check_expression(expression.right_expr) != "int32":
         self.errors.append(SemError(f'operation \"{expression.op}\" can be done only between type int32', line=1, column=1))
@@ -259,6 +279,9 @@ class VsopSem:
 
   def check_expression_unop(self, expression):
     print("unnop")
+    if hasattr(expression, 'method'):
+      expression.expr.method = expression.method
+
     if expression.op == "not":
       if self.check_expression(expression.expr) != "bool":
         self.errors.append(SemError(f'operation \"{expression.op}\" can be done only on type boolean', line=1, column=1))
@@ -270,12 +293,16 @@ class VsopSem:
 
   def check_expression_while(self, expression):
     print("while")
+    if hasattr(expression, 'method'):
+      expression.cond_expr.method = expression.method
     if self.check_expression(expression.cond_expr) != "bool":
       self.errors.append(SemError(f'the condition of the while is not a boolean', line=1, column=1))
     return "unit"
 
   def check_expression_if(self, expression):
     print(type(expression.cond_expr))
+    if hasattr(expression, 'method'):
+      expression.cond_expr.method = expression.method
     if self.check_expression(expression.cond_expr) != "bool":
       self.errors.append(SemError(f'the condition of the if is not a boolean', line=1, column=1))
 
@@ -283,8 +310,64 @@ class VsopSem:
     print(expression.init_expr)
     print(type(expression.init_expr))
     if(expression.init_expr):
+      if hasattr(expression, 'method'):
+
+        expression.init_expr.method = expression.method
       if expression.type != self.check_expression(expression.init_expr):
         self.errors.append(SemError(f'the value of \"{expression.name}\" is not of type \"{expression.type}\"', line=0, column=0))
+
+    if hasattr(expression, 'method'):
+
+      expression.scope_expr.method = expression.method
+
+      previous_local_variable=None
+      if expression.name in expression.scope_expr.method.local_variables_table_pointer:
+        previous_local_variable=expression.scope_expr.method.local_variables_table_pointer[expression.name]
+
+      expression.scope_expr.method.local_variables_table_pointer[expression.name]=expression
+      
+      block_type=self.check_expression(expression.scope_expr)
+      if previous_local_variable != None: 
+        expression.scope_expr.method.local_variables_table_pointer[expression.name]=previous_local_variable
+      else:
+        del expression.scope_expr.method.local_variables_table_pointer[expression.name]
+
+      return block_type
+      
+      
+
+  def check_expression_assign(self, expression):
+    if expression.name == "self":
+      self.errors.append(SemError(f"Cannot assign to self", line=1, column=1))
+
+    if expression.name in expression.method.local_variables_table_pointer:
+      if hasattr(expression, 'method'):
+        expression.expr.method = expression.method
+
+      if expression.method.local_variables_table_pointer[expression.name].type != self.check_expression(expression.expr):
+        self.errors.append(SemError(f"{expression.name} is assign to the wrong type", line=1, column=1))
+
+    elif expression.name in expression.method.class_pointer.fields_table_pointer:
+      if hasattr(expression, 'method'):
+        print("---")
+        print(expression.expr)
+        print(type(expression.expr))
+        expression.expr.method = expression.method
+      if expression.method.class_pointer.fields_table_pointer[expression.name].type != self.check_expression(expression.expr):
+        self.errors.append(SemError(f"{expression.name} is assign to the wrong type", line=1, column=1))
+      
+    else:
+      self.errors.append(SemError(f"{expression.name} is unknown", line=1, column=1))
+
+
+  def check_expression_new(self, expression):
+    pass
+
+  def check_expression_call(self, expression):
+    print(type(expression.obj_expr))
+    print(type(expression.method_name))
+    print(expression.expr_list)
+    
 
   def check_main(self):
     main_class = None
