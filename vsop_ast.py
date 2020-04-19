@@ -229,10 +229,10 @@ class New(Node):
 
 class Literal(Node):
   def __init__(self, value):
-    self.value = value
+    self.literal = value
 
   def __str__(self):
-    return str(self.value)
+    return str(self.literal)
 
 class IntegerLiteral(Literal):
   pass
