@@ -48,8 +48,8 @@ class VsopSem:
     # si on envoie TOUTES les classes du prog il peut y avoir une erreur de cycle pour une classe redéfinie
     # peut etre mieux de n'envoyer que les classes_table_pointer?
 
-    # ne doit pas etre dans la boucle qui suit sinon elle sera notifiée plusieurs fois
     # if parent is not defined then error
+    # ne doit pas etre dans la boucle qui suit sinon elle sera notifiée plusieurs fois
     for c in self.program.list_class:
        if c.parent not in self.program.classes_table_pointer:
           self.errors.append(SemError(f"class {c.parent} not defined", line=1, column=1))
@@ -83,7 +83,7 @@ class VsopSem:
           parent = self.program.classes_table_pointer[child.parent]
           already_seen.append(child.name)
 
-  def check_class_core(self):
+  def check_class_body(self):
     for c in self.program.list_class:
       self.check_fields(c)
     for c in self.program.list_class:
@@ -109,14 +109,23 @@ class VsopSem:
         self.errors.append(SemError(f"a field named \"self\" is forbidden""", line=1, column=1))
         continue
       # checks for redefinition
-      if field.name in class_.fields_table_pointer:
+      if field.name in class_.parent_pointer.fields_table_pointer:
+        self.errors.append(SemError(f"redefinition of field {field.name} from {class_.parent_pointer.name} parent in class {class_.name}", line=1, column=1))
+      elif field.name in class_.fields_table_pointer:
         self.errors.append(SemError(f"redefinition of field {field.name} in class {class_.name}", line=1, column=1))
       else:
         class_.fields_table_pointer[field.name] = field
 
+      # check init expr
       if field.init_expr:
-        print(type(field.init_expr))
-        # self.check_expression(field.init_expr)
+        self.check_expression(field.init_expr)
+
+      # records parent fields in child class
+      if not class_.name == object_class.name:
+        for field_name in class_.parent_pointer.fields_table_pointer:
+          if not field_name in class_.fields_table_pointer:
+            class_.fields_table_pointer[field_name] = class_.parent_pointer.fields_table_pointer[field_name]
+
   
   def check_methods(self, class_):
     ''' records methods, checks for duplicates and correct overrides '''
@@ -140,11 +149,15 @@ class VsopSem:
       else:
         class_.methods_table_pointer[method.name] = method
 
-      method.formals_table_pointer = {"self": class_}
+      # method.formals_table_pointer = {"self": class_}
+      method.formals_table_pointer = {}
       for formal in method.formals:
           # save method in formal
           formal.method = method
 
+          if formal.name == "self":
+            self.errors.append(SemError(f"a method named \"self\" is forbidden""", line=1, column=1))
+            continue
           # check params redefinition
           if formal.name in method.formals_table_pointer:
             self.errors.append(SemError(f"redefinition of parameter {formal.name} in method {method.name}", line=1, column=1))
@@ -171,10 +184,14 @@ class VsopSem:
         if not method_name in class_.methods_table_pointer:
           class_.methods_table_pointer[method_name] = class_.parent_pointer.methods_table_pointer[method_name]
 
-      
+  def check_expression(self, expression):
+    if isinstance(expression, Literal):
+      self.check_expression_literal(expression)
+    else:
+      print(f"another one {expression}")
 
-  def check_expression(self, class_):
-    pass
+  def check_expression_literal(self, expression):
+    print("handled literal")
 
   def check_main(self):
     main_class = None
@@ -202,7 +219,7 @@ class VsopSem:
     print("check_inheritance")
     self.check_inheritance()
     print("check_fields & check_methods")
-    self.check_class_core()
+    self.check_class_body()
     self.check_main()
     print("DONE")
     return self.program, self.errors
