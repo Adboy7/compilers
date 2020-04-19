@@ -16,10 +16,7 @@ __author__  = "Adrien and Kevin"
 __version__ = '1.0'
 
 class Node:
-  # TODO ajouter position au parse
-  def __init__(self, line, column):
-    self.line = line
-    self.column = column
+  pass
 
 
 class Program(Node):
@@ -231,10 +228,29 @@ class New(Node):
 
 
 class Literal(Node):
-  def __init__(self, literal):
-    self.literal = literal
+  def __init__(self, value):
+    self.value = value
 
   def __str__(self):
-    return str(self.literal)
+    return str(self.value)
+
+class IntegerLiteral(Literal):
+  pass
+
+class StringLiteral(Literal):
+  pass
+
+class BooleanLiteral(Literal):
+  pass
+
+class UnitLiteral(Literal):
+  pass
+
+class ObjectIdentifier(Node):
+  def __init__(self, name):
+    self.name = name
+
+  def __str__(self):
+    return str(self.name)
 
 object_class = Class("Object", [], [], parent=None)

@@ -71,11 +71,14 @@ class VsopParser:
 
   def p_class_grammar(self, p):
     '''class_grammar : class type_identifier lbrace class_body rbrace
-                     | class type_identifier extends type_identifier lbrace class_body rbrace'''
+                     | class type_identifier extends type_identifier lbrace class_body rbrace'''    
     if len(p) == 8:
       p[0] = Class(p[2], p[6][0], p[6][1], p[4])
     else:
       p[0] = Class(p[2], p[4][0], p[4][1])
+    # NOTE dans le code source de yacc il recup la ligne du token avec "slice" donc j'ai pareil
+    p[0].lineno = p.slice[1].lineno
+    p[0].column = p.slice[1].column
 
   def p_class_body(self, p):
     '''class_body : class_body field
@@ -93,14 +96,22 @@ class VsopParser:
   def p_field(self, p):
     '''field : object_identifier colon type semicolon
              | object_identifier colon type assign expression semicolon'''
+    p[1].lineno = p.slice[1].lineno
+    p[1].column = p.slice[1].column
     if len(p) == 7:
       p[0] = Field(p[1], p[3], p[5])
     else:
       p[0] = Field(p[1], p[3])
+    p[0].lineno = p[1].lineno
+    p[0].column = p[1].column
 
   def p_method(self, p):
     '''method : object_identifier lpar formals rpar colon type block'''
+    p[1].lineno = p.slice[1].lineno
+    p[1].column = p.slice[1].column
     p[0] = Method(p[1], p[3], p[6], p[7])
+    p[0].lineno = p[1].lineno
+    p[0].column = p[1].column
 
   def p_type(self, p):
     '''type : type_identifier
@@ -109,6 +120,7 @@ class VsopParser:
             | string
             | unit'''
     p[0] = p[1]
+    # TODO renvoyer une classe pour record la position
 
   def p_formals(self, p):
     '''formals : formal
@@ -125,7 +137,11 @@ class VsopParser:
 
   def p_formal(self, p):
     '''formal : object_identifier colon type'''
+    p[1].lineno = p.slice[1].lineno
+    p[1].column = p.slice[1].column
     p[0] = Formal(p[1], p[3])
+    p[0].lineno = p[1].lineno
+    p[0].column = p[1].column
 
   def p_block(self,p):
     '''block : lbrace expressions rbrace '''
@@ -148,29 +164,42 @@ class VsopParser:
       p[0] = If(p[2], p[4])
     else:
       p[0] = If(p[2], p[4], p[6])
+    p[0].lineno = p.slice[1].lineno
+    p[0].column = p.slice[1].column
 
   def p_expression_while(self, p):
     'expression : while expression do expression'
     p[0] = While(p[2], p[4])
+    p[0].lineno = p.slice[1].lineno
+    p[0].column = p.slice[1].column
 
   def p_expression_let(self, p):
     '''expression : let object_identifier colon type in expression
                   | let object_identifier colon type assign expression in expression'''
-
+    p[2].lineno = p.slice[2].lineno
+    p[2].column = p.slice[2].column
     if len(p) == 7:
       p[0] = Let(p[2], p[4], p[6])
     else:
       p[0] = Let(p[2], p[4], p[8], p[6])
+    p[0].lineno = p.slice[1].lineno
+    p[0].column = p.slice[1].column
   
   def p_expression_assign(self, p):
     'expression : object_identifier assign expression'
+    p[1].lineno = p.slice[1].lineno
+    p[1].column = p.slice[1].column
     p[0] = Assign(p[1], p[3])
+    p[0].lineno = p[1].lineno
+    p[0].column = p[1].column
 
   def p_expression_unop(self, p):
     '''expression : not expression
                   | minus expression %prec unary_minus
                   | isnull expression'''
     p[0] = UnOp(p[1], p[2])
+    p[0].lineno = p.slice[1].lineno
+    p[0].column = p.slice[1].column
 
   def p_expression_binop(self, p):
     '''expression : expression and expression
@@ -183,14 +212,24 @@ class VsopParser:
             | expression div expression
             | expression pow expression'''
     p[0] = BinOp(p[2], p[1], p[3])
+    p[0].lineno = p[1].lineno
+    p[0].column = p[1].column
 
   def p_expression_call(self, p):
     '''expression : object_identifier lpar args rpar
                   | expression dot object_identifier lpar args rpar'''
     if len(p) == 5:
+      p[1].lineno = p.slice[1].lineno
+      p[1].column = p.slice[1].column
       p[0] = Call(p[1], p[3])
+      p[0].lineno = p[1].lineno
+      p[0].column = p[1].column
     else:
+      p[3].lineno = p.slice[3].lineno
+      p[3].column = p.slice[3].column
       p[0] = Call(p[3], p[5], p[1])
+      p[0].lineno = p[3].lineno
+      p[0].column = p[3].column
 
   def p_args(self,p):
     '''args : expression 
@@ -206,29 +245,46 @@ class VsopParser:
   def p_expression_new(self, p):
     '''expression : new type_identifier'''
     p[0] = New(p[2])
+    p[0].lineno = p.slice[1].lineno
+    p[0].column = p.slice[1].column
 
-  def p_literal(self,p):
-    '''literal : integer_literal
-               | string_literal
-               | boolean_literal'''
-    p[0] = Literal(p[1])
+  def p_integer_literal(self,p):
+    '''literal : integer_literal'''
+    p[0] = IntegerLiteral(p[1])
+    p[0].lineno = p.slice[1].lineno
+    p[0].column = p.slice[1].column
+  
+  def p_string_literal(self,p):
+    '''literal : string_literal'''
+    p[0] = StringLiteral(p[1])
+    p[0].lineno = p.slice[1].lineno
+    p[0].column = p.slice[1].column
 
   def p_boolean_literal(self,p):
-    '''boolean_literal : true 
-                       | false'''
-    p[0] = Literal(p[1])
+    '''literal : true 
+               | false'''
+    p[0] = BooleanLiteral(p[1]) # TODO renvoyer uniquement le bool ou créer une nouvelle classe qd adrien aura fini
+    p[0].lineno = p.slice[1].lineno
+    p[0].column = p.slice[1].column
 
   def p_expression_unit(self, p):
     '''expression : lpar rpar'''
-    p[0] = Literal("()")
+    p[0] = UnitLiteral("()")
+    p[0].lineno = p.slice[1].lineno
+    p[0].column = p.slice[1].column
 
   def p_expression_par(self, p):
     '''expression : lpar expression rpar'''
     p[0] = p[2]
-  
+
+  def p_expression_object_identifier(self, p):
+    '''expression : object_identifier'''
+    p[0] = p[1]
+    p[0].lineno = p.slice[1].lineno
+    p[0].column = p.slice[1].column
+
   def p_expression(self, p):
-    '''expression : object_identifier
-                  | literal
+    '''expression : literal
                   | block'''
     p[0] = p[1]
    

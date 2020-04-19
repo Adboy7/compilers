@@ -21,6 +21,7 @@ __version__ = '2.1'
 
 import ply.lex as lex
 from ply.lex import TOKEN
+from vsop_ast import *
 
 class LexicalError():
   def __init__(self, line, column, description):
@@ -179,6 +180,7 @@ class VsopLexer():
   @TOKEN(lowercase + r'(' + letter + r'|' + digit + r'| _ )*')
   def t_object_identifier(self, t):
     t.type = self.keywords.get(t.value,'object_identifier')
+    t.value = ObjectIdentifier(t.value)
     return t
 
 
