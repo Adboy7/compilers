@@ -88,12 +88,16 @@ class VsopSem:
   def check_fields(self, class_):
     pass
 
-  def check_methods(self, class_):
+  def check_methods(self):
+    for c in self.program.list_class:
+      self.check_method(c)
+  
+  def check_method(self, class_):
     ''' records methods, checks for duplicates and correct overrides '''
 
     # first check parent methods prior to check method inheritance
     if not hasattr(class_.parent_pointer, "methods_table_pointer"):
-      self.check_methods(class_.parent_pointer)
+      self.check_method(class_.parent_pointer)
 
     class_.methods_table_pointer = {}
 
@@ -120,15 +124,41 @@ class VsopSem:
             method.formals_table_pointer[formal.name] = formal
       
       # check return type
+      # TODO checker si le ret type correspond
 
-      # check overridden methods
+    # check overridden methods
+    for method_name in class_.methods_table_pointer:
+      if method_name in class_.parent_pointer.methods_table_pointer:
+        # method is overridden -> check params
+        child_method = class_.methods_table_pointer[method_name]
+        parent_method = class_.parent_pointer.methods_table_pointer[method_name]
+        if len(child_method.formals_table_pointer) != len(parent_method.formals_table_pointer):
+          self.errors.append(SemError(f"overriding method {method_name} with different signature", line=1, column=1))
+        
+        # TODO check return type
+    
+    # add inherited methods to table pointer
+    for method_name in class_.parent_pointer.methods_table_pointer:
+      if not method_name in class_.methods_table_pointer:
+        class_.methods_table_pointer[method_name] = class_.parent_pointer.methods_table_pointer[method_name]
+
       
 
   def check_expression(self, class_):
     pass
 
-  def check_main(self, program):
-    pass
+  def check_main(self):
+    if not "Main" in self.program.classes_table_pointer:
+        self.errors.append(SemError(f"program doesn't have a Main class", line=1, column=1))
+        main_class = self.program.classes_table_pointer["Main"]
+    elif not "main" in main_class.methods_table_pointer:
+        self.errors.append(SemError(f"Main class doesn't have a main method", line=1, column=1))
+        main_method = main_class.methods_table_pointer["main"]
+    else:
+      if not len(main_method.formals_table_pointer) == 0:
+        self.errors.append(SemError(f"main method can't have arguments", line=1, column=1))
+
+      # TODO check return type
 
   def semantic_analysis(self, program):
     self.errors = []
@@ -138,7 +168,8 @@ class VsopSem:
     self.check_redefine()
     print("check_inheritance")
     self.check_inheritance()
-
+    # self.check_methods()
+    # self.check_main()
     print("DONE")
     return self.program, self.errors
 
