@@ -105,7 +105,7 @@ class VsopSem:
       field.class_pointer = class_
 
       # check type
-      self.check_expression(field.init_expr)
+      self.check_expression(field.type)
       # TODO record le type
 
       # check if field = self
@@ -214,17 +214,19 @@ class VsopSem:
       print(f"another one {expression}")
 
   def check_expression_literal(self, expression):
-    print("literal")
     if isinstance(expression.literal, Literal):
       if expression.literal.literal == "true" or expression.literal.literal == "false":
-        print("bool")
+        print("bool literal")
         return "bool"
     elif isinstance(expression.literal, str):
       if expression.literal == "()":
+        print("unit literal")
         return "unit"
       elif expression.literal[0] == '"' and expression.literal[-1]=='"':
+        print("string literal")
         return "string"
     elif isinstance(expression.literal, int):
+      print("int32 literal")
       if(expression.literal<-2147483648 or expression.literal>2147483647):
         return "error"
       return "int32"
