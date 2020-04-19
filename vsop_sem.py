@@ -36,13 +36,12 @@ class VsopSem:
   def check_redefine(self):
     # seule la première classe du fichier est considérée comme définie, les redéfinitions ne sont pas enregistrées
     ''' records defined classes and finds duplicates '''
-    classes_table_pointer = {object_class.name: object_class}
+    self.program.classes_table_pointer = {object_class.name: object_class}
     for c in self.program.list_class:
-      if c.name in classes_table_pointer:
+      if c.name in self.program.classes_table_pointer:
         self.errors.append(SemError(f"redefinition of class {c.name}", line=1, column=1))
       else:
-        classes_table_pointer[c.name] = c
-    self.program.classes_table_pointer = classes_table_pointer
+        self.program.classes_table_pointer[c.name] = c
 
   def check_inheritance(self):
     '''checks for cycles and undefined extending class'''
@@ -83,25 +82,54 @@ class VsopSem:
           child = parent
           parent = self.program.classes_table_pointer[child.parent]
           already_seen.append(child.name)
-          
+
+  def check_class_core(self):
+    for c in self.program.list_class:
+      self.check_fields(c)
+    for c in self.program.list_class:
+      self.check_methods(c)
 
   def check_fields(self, class_):
-    pass
+    ''' records fields, checks for duplicates and overrides'''
 
-  def check_methods(self):
-    for c in self.program.list_class:
-      self.check_method(c)
+    # already checked
+    if hasattr(class_, "fields_table_pointer"):
+      return
+
+    # first check parent fields prior to check field redifinition
+    if not class_.name == object_class.name and not hasattr(class_.parent_pointer, "fields_table_pointer"):
+      self.check_fields(class_.parent_pointer)
+
+    class_.fields_table_pointer = {}
+    for field in class_.fields:
+      field.class_pointer = class_
+
+      # check if field = self
+      if field.name == "self":
+        self.errors.append(SemError(f"a field named \"self\" is forbidden""", line=1, column=1))
+        continue
+      # checks for redefinition
+      if field.name in class_.fields_table_pointer:
+        self.errors.append(SemError(f"redefinition of field {field.name} in class {class_.name}", line=1, column=1))
+      else:
+        class_.fields_table_pointer[field.name] = field
+
+      if field.init_expr:
+        print(type(field.init_expr))
+        # self.check_expression(field.init_expr)
   
-  def check_method(self, class_):
+  def check_methods(self, class_):
     ''' records methods, checks for duplicates and correct overrides '''
-
+    
+    # already checked
+    if hasattr(class_, "methods_table_pointer"):
+      return
+    
     # first check parent methods prior to check method inheritance
-    if not hasattr(class_.parent_pointer, "methods_table_pointer"):
-      self.check_method(class_.parent_pointer)
+    if not class_.name == object_class.name and not hasattr(class_.parent_pointer, "methods_table_pointer"):
+      self.check_methods(class_.parent_pointer)
 
     class_.methods_table_pointer = {}
-
-    
     for method in class_.methods:
       # save class in method
       method.class_pointer = class_
@@ -138,9 +166,10 @@ class VsopSem:
         # TODO check return type
     
     # add inherited methods to table pointer
-    for method_name in class_.parent_pointer.methods_table_pointer:
-      if not method_name in class_.methods_table_pointer:
-        class_.methods_table_pointer[method_name] = class_.parent_pointer.methods_table_pointer[method_name]
+    if not class_.name == object_class.name:
+      for method_name in class_.parent_pointer.methods_table_pointer:
+        if not method_name in class_.methods_table_pointer:
+          class_.methods_table_pointer[method_name] = class_.parent_pointer.methods_table_pointer[method_name]
 
       
 
@@ -148,17 +177,21 @@ class VsopSem:
     pass
 
   def check_main(self):
-    if not "Main" in self.program.classes_table_pointer:
-        self.errors.append(SemError(f"program doesn't have a Main class", line=1, column=1))
-        main_class = self.program.classes_table_pointer["Main"]
-    elif not "main" in main_class.methods_table_pointer:
-        self.errors.append(SemError(f"Main class doesn't have a main method", line=1, column=1))
-        main_method = main_class.methods_table_pointer["main"]
-    else:
+    main_class = None
+    main_method = None
+    try:
+      main_class = self.program.classes_table_pointer["Main"]
+      main_method = main_class.methods_table_pointer["main"]
+
       if not len(main_method.formals_table_pointer) == 0:
         self.errors.append(SemError(f"main method can't have arguments", line=1, column=1))
 
       # TODO check return type
+    except:
+      if main_class == None:
+        self.errors.append(SemError(f"program doesn't have a Main class", line=1, column=1))
+      elif main_method == None:
+        self.errors.append(SemError(f"Main class doesn't have a main method", line=1, column=1))
 
   def semantic_analysis(self, program):
     self.errors = []
@@ -168,8 +201,9 @@ class VsopSem:
     self.check_redefine()
     print("check_inheritance")
     self.check_inheritance()
-    # self.check_methods()
-    # self.check_main()
+    print("check_fields & check_methods")
+    self.check_class_core()
+    self.check_main()
     print("DONE")
     return self.program, self.errors
 
