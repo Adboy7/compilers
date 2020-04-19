@@ -215,7 +215,7 @@ class VsopSem:
 
     print(type(expression))
     
-    if isinstance(expression, Literal):
+    if isinstance(expression, (IntegerLiteral,BooleanLiteral,UnitLiteral,StringLiteral)):
       return self.check_expression_literal(expression)
     elif isinstance(expression, BinOp):
       return self.check_expression_binop(expression)
