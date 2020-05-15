@@ -48,22 +48,27 @@ class VsopParser:
     ('left', 'dot'),
   )
 
-  def __init__(self, debug=False):
+  
+  def __init__(self, debug=False, text=None):
     self.errors = []
     self.tokens = VsopLexer.tokens
     self.lexer = VsopLexer()
     self.parser = yacc.yacc(module=self, debug=debug, errorlog=yacc.NullLogger()) 
-
+  
   def parse(self, text):
     self.errors = []
     result = self.parser.parse(text, lexer=self.lexer)
     return result, self.errors, self.lexer.errors
+
+  def find_column(self, p, num):
+    return p.lexpos(num)-self.lexer.line_lexpos_array[p.lineno(num)-1]
 
 ### GRAMMAR RULES
   def p_program(self, p):
     '''program : class_grammar
                | program class_grammar'''
     if len(p) == 3:
+
       p[0] = p[1]
       p[0].add(p[2])
     else:
@@ -72,15 +77,17 @@ class VsopParser:
   def p_class_grammar(self, p):
     '''class_grammar : class type_identifier lbrace class_body rbrace
                      | class type_identifier extends type_identifier lbrace class_body rbrace'''
+    
     if len(p) == 8:
-      p[0] = Class(p[2], p[6][0], p[6][1], p[4])
+      p[0] = Class(p[2], p[6][0], p[6][1], p.lineno(1), self.find_column(p, 2), p[4], p.lineno(4), self.find_column(p,4))
     else:
-      p[0] = Class(p[2], p[4][0], p[4][1])
+      p[0] = Class(p[2], p[4][0], p[4][1], p.lineno(1), self.find_column(p, 2))
 
   def p_class_body(self, p):
     '''class_body : class_body field
                   | class_body method
                   | '''
+    
     if len(p) == 1:
         p[0] = [[], []]
     else:
@@ -93,14 +100,17 @@ class VsopParser:
   def p_field(self, p):
     '''field : object_identifier colon type semicolon
              | object_identifier colon type assign expression semicolon'''
+    
     if len(p) == 7:
-      p[0] = Field(p[1], p[3], p[5])
+      p[0] = Field(p[1], p[3], p.lineno(1), self.find_column(p, 1), p[5])
+
     else:
-      p[0] = Field(p[1], p[3])
+      p[0] = Field(p[1], p[3], p.lineno(1), self.find_column(p, 1))
 
   def p_method(self, p):
     '''method : object_identifier lpar formals rpar colon type block'''
-    p[0] = Method(p[1], p[3], p[6], p[7])
+
+    p[0] = Method(p[1], p[3], p[6], p.lineno(1), self.find_column(p, 1),p[7])
 
   def p_type(self, p):
     '''type : type_identifier
@@ -125,7 +135,8 @@ class VsopParser:
 
   def p_formal(self, p):
     '''formal : object_identifier colon type'''
-    p[0] = Formal(p[1], p[3])
+ 
+    p[0] = Formal(p[1], p[3], p.lineno(1), self.find_column(p, 1))
 
   def p_block(self,p):
     '''block : lbrace expressions rbrace '''
@@ -144,23 +155,28 @@ class VsopParser:
   def p_expression_if(self, p):
     '''expression : if expression then expression
                   | if expression then expression else expression'''
+    
+    
     if len(p) == 5:
-      p[0] = If(p[2], p[4])
+      p[0] = If(p[2], p[4], p.lineno(1), self.find_column(p, 1))
+      
+      
     else:
-      p[0] = If(p[2], p[4], p[6])
+      p[0] = If(p[2], p[4], p.lineno(1), p.lexpos(1)-self.lexer.line_lexpos_array,[p.lineno(1)-1], p[6])
+      
 
   def p_expression_while(self, p):
     'expression : while expression do expression'
-    p[0] = While(p[2], p[4])
+    p[0] = While(p[2], p[4], p.lineno(1), self.find_column(p, 1))
 
   def p_expression_let(self, p):
     '''expression : let object_identifier colon type in expression
                   | let object_identifier colon type assign expression in expression'''
 
     if len(p) == 7:
-      p[0] = Let(p[2], p[4], p[6])
+      p[0] = Let(p[2], p[4], p[6], p.lineno(1), self.find_column(p, 1))
     else:
-      p[0] = Let(p[2], p[4], p[8], p[6])
+      p[0] = Let(p[2], p[4], p[8], p.lineno(1), self.find_column(p, 1), p[6])
   
   def p_expression_assign(self, p):
     'expression : object_identifier assign expression'
@@ -182,6 +198,7 @@ class VsopParser:
             | expression times expression
             | expression div expression
             | expression pow expression'''
+
     p[0] = BinOp(p[2], p[1], p[3])
 
   def p_expression_call(self, p):
@@ -225,10 +242,13 @@ class VsopParser:
   def p_expression_par(self, p):
     '''expression : lpar expression rpar'''
     p[0] = p[2]
-  
+
+  def p_expression_object_identifier(self, p):
+    '''expression : object_identifier'''
+    p[0] = Object_identifier(p[1], p.lineno(1), self.find_column(p,1))
+
   def p_expression(self, p):
-    '''expression : object_identifier
-                  | literal
+    '''expression : literal
                   | block'''
     p[0] = p[1]
    

@@ -33,35 +33,52 @@ class VsopSem:
     self.errors = []
     self.program = None
 
+
   def check_redefine(self, program):
     # seule la première classe du fichier est considérée comme définie, les redéfinitions ne sont pas enregistrées
     defined_classes = {"Object": None}
-    for c in program.list_class:
-      if c.name in defined_classes:
-        self.errors.append(SemError(f"Class {c.name} already defined", line=0, column=0))
+    is_main_class=False
+    is_main_method=False 
+    for cl in program.list_class:
+      if cl.name in defined_classes:
+        self.errors.append(SemError(f"Class {cl.name} already defined", line=cl.lineno, column=cl.column))
       else:
-        defined_classes[c.name] = c
+        defined_classes[cl.name] = cl
+      if cl.name == "Main":
+        is_main_class = True
+        for method in cl.methods:
+          if method.name == "main":
+            is_main_method = True
+
+    if not is_main_class :
+      self.errors.append(SemError(f"Main class is missing", line=1, column=1))
+
+    elif not is_main_method:
+      self.errors.append(SemError(f"main method in Main class is missing", line=1, column=1))
     return defined_classes
+
+
+
 
   def check_inheritance(self, program):
     # si on envoie TOUTES les classes du prog il peut y avoir une erreur de cycle pour une classe redéfinie
     # peut etre mieux de n'envoyer que les defined_classes?
     class_checked = []
-    for c in program.list_class:
-      child_name = c.name
-      parent_name = c.parent
+    for cl in program.list_class:
+      child_name = cl.name
+      parent_name = cl.parent
       already_seen = [child_name]
 
       while True:
         if parent_name in class_checked or parent_name == "Object":
-          for seen in already_seen:
-            class_checked.append(seen)
+          for cl_seen in already_seen:
+            class_checked.append(cl_seen)
           break
         elif parent_name in already_seen:
-          self.errors.append(SemError(f"class {child_name} cannot extend child class {parent_name}.", line=0, column=0))
+          self.errors.append(SemError(f"class {child_name} cannot extend child class {parent_name}, there is a loop.", line=cl.lineno, column=cl.column))
           break
         if parent_name not in self.defined_classes:
-          self.errors.append(SemError(f"class {parent_name} not defined", line=0, column=0))
+          self.errors.append(SemError(f"class {parent_name} not defined", line=cl.parent_lineno, column=cl.parent_column))
           break
         else:
           child_name = parent_name
@@ -70,40 +87,37 @@ class VsopSem:
           
 
   def check_fields(self, program):
-    for c in program.list_class:
-      if(c.fields):
+    for cl in program.list_class:
+      if(cl.fields):
         already_seen=[]
-        for field in c.fields:
+        for field in cl.fields:
           #check if fiel = self
           if(field.name == 'self'):
-            self.errors.append(SemError(f"a field named \"self\" is forbidden""", line=0, column=0))
+            self.errors.append(SemError(f"a field named \"self\" is forbidden", line=field.lineno, column=field.column))
             break
           #check redefinition of field
-          if(field.name in already_seen):
-            #NEED COLUMN AND LIE OF FIRST DEFINED
-            #is this good ? idk
-            self.errors.append(SemError(f"redefinition of field {field.name}, first defined at : """, line=0, column=0))
-            break
-          already_seen.append(field.name)
+          for seen_field in already_seen:
+            if(field.name == seen_field.name):
+              self.errors.append(SemError(f"redefinition of field \"{field.name}\", first defined at {seen_field.lineno}:{seen_field.column} """, line=field.lineno, column=field.column))
+              break
+          already_seen.append(field)
 
+          #check if init_expr have the right type
           if field.init_expr:
-            print(type(field.init_expr))
-            self.check_expression(field.init_expr)
+            print(field.init_expr)
+            if field.type != self.check_expression(field.init_expr):
+              self.errors.append(SemError(f"the field {field.name} is assigned to a type {self.check_expression(field.init_expr)} instead of a type {field.type}", line=field.lineno, column=field.column))
 
            
 
   def check_methods(self, program):
-    is_main_class=False
-    is_main_method=False 
     for c in program.list_class:
       if(c.methods):
         
-        if(c.name == "Main"):
-          is_main_class=True
+       
         
         for method in c.methods:
-          if(is_main_class and method.name == "main"):
-            is_main_method = True
+          
           
           #check if multiple formals with the same name
           formal_already_seen=[]
@@ -113,9 +127,6 @@ class VsopSem:
               break
             formal_already_seen.append(formal.name)
 
-    #if is_main_method is false then there is not main method in the Main class
-    if(not is_main_method):
-      self.errors.append(SemError(f"the Main class should have a main method", line=0, column=0))
 
   def check_type(self,ctype,value):
     if(ctype == "bool"):
@@ -191,7 +202,6 @@ class VsopSem:
         self.errors.append(SemError(f'the condition of the if is not a boolean', line=0, column=0))
       
     if isinstance(express, Let):
-      print(express.init_expr)
       print(type(express.init_expr))
       if(express.init_expr):
         if express.type != self.check_expression(express.init_expr):

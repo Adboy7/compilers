@@ -34,12 +34,17 @@ class Program(Node):
 
 
 class Class(Node):
-  def __init__(self, name, fields, methods, parent="Object"):
+  def __init__(self, name, fields, methods, lineno, column, parent="Object", parent_lineno=None, parent_column=None):
     self.name = name
     self.fields = fields
     self.methods = methods
     self.parent = parent
+    self.lineno= lineno
+    self.column= column
+    self.parent_lineno = parent_lineno
+    self.parent_column = parent_column
 
+   
   def __str__(self):
     return f"Class({self.name}, " \
            f"{self.parent}, " \
@@ -48,10 +53,13 @@ class Class(Node):
 
 
 class Field(Node):
-  def __init__(self, name, type, init_expr=None):
+  def __init__(self, name, type, lineno, column, init_expr=None):
     self.name = name
     self.type = type
     self.init_expr = init_expr
+    self.lineno = lineno
+    self.column = column
+    
   
   def __str__(self):
     if isinstance(self.init_expr, list) and len(self.init_expr) > 1:
@@ -66,11 +74,13 @@ class Field(Node):
 
 
 class Method(Node):
-  def __init__(self, name, formals, ret_type, block=[]):
+  def __init__(self, name, formals, ret_type, lineno, column, block=[]):
     self.name = name
     self.formals = formals
     self.ret_type = ret_type
     self.block = block
+    self.lineno = lineno
+    self.column = column
 
   def __str__(self):
     if isinstance(self.block, list) and len(self.block) > 1:
@@ -95,19 +105,26 @@ class Type(Node):
 
 
 class Formal(Node):
-  def __init__(self, name, type):
+  def __init__(self, name, type, lineno, column):
     self.name = name
     self.type = type
+    self.lineno = lineno
+    self.column = column
+    
   
   def __str__(self):
     return f"{self.name} : {self.type}"
 
 
 class If(Node):
-  def __init__(self, cond_expr, then_expr, else_expr=None):
+  def __init__(self, cond_expr, then_expr, lineno, column, else_expr=None):
     self.cond_expr = cond_expr
     self.then_expr = then_expr
     self.else_expr = else_expr
+    self.lineno = lineno
+    self.column = column
+    
+    
 
   def __str__(self):
     if isinstance(self.cond_expr, list) and len(self.cond_expr) > 1:
@@ -137,9 +154,14 @@ class If(Node):
 
 
 class While(Node):
-  def __init__(self, cond_expr, body_expr):
+  def __init__(self, cond_expr, body_expr, lineno, column):
     self.cond_expr = cond_expr
     self.body_expr = body_expr
+    self.lineno = lineno
+    self.column = column
+    
+    
+    
 
   def __str__(self):
     if isinstance(self.cond_expr, list) and len(self.cond_expr) > 1:
@@ -160,11 +182,13 @@ class While(Node):
 
 
 class Let(Node):
-  def __init__(self, name, type, scope_expr, init_expr=None):
+  def __init__(self, name, type, scope_expr, lineno, column, init_expr=None):
     self.name = name
     self.type = type
     self.scope_expr = scope_expr
     self.init_expr = init_expr
+    self.lineno = lineno
+    self.column = column
 
   def __str__(self):
     if isinstance(self.scope_expr, list) and len(self.scope_expr) > 1:
@@ -236,3 +260,12 @@ class Literal(Node):
 
   def __str__(self):
     return str(self.literal)
+
+class Object_identifier(Node):
+  def __init__(self, name, lineno, column):
+    self.name = name
+    self.lineno = lineno
+    self.column = column
+
+  def __str__(self):
+    return str(self.name)

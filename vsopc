@@ -79,7 +79,6 @@ def main(argv):
         with open(f, 'r') as file:
             text = file.read()
             file.close()
-
             if mode == 1:
                 lexer = VsopLexer()
                 tokens,errors = lexer.tokenize(text)
@@ -87,7 +86,7 @@ def main(argv):
                 print_token(tokens)
                 if errors:
                     exit(1)
-            elif mode >= 2:
+            if mode >= 2:
                 parser = VsopParser()
                 prog, parse_errors, lex_errors = parser.parse(text)
 

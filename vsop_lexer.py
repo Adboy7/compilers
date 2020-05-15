@@ -127,7 +127,7 @@ class VsopLexer():
 
   def __init__(self):
     self.errors = []
-    self.last_lf_lexpos = -1
+    self.line_lexpos_array = [-1]
     self.comment_level = []
     self.string = ''
     self.last_lexpos = 0
@@ -148,7 +148,7 @@ class VsopLexer():
 
   def tokenize(self, text):
     self.errors = []
-    self.last_lf_lexpos = -1
+    self.line_lexpos_array = [-1]
     self.comment_level = []
     self.string = ''
     self.last_lexpos = 0
@@ -164,8 +164,8 @@ class VsopLexer():
     return tokens, self.errors
 
   def find_column(self, token):
-    return token.lexpos - self.last_lf_lexpos
-
+    return token.lexpos - self.line_lexpos_array[token.lineno-1]
+    
   #Regular expression function rules tokens
   #WARNING All tokens defined by functions are added in the same order as
   #they appear in the lexer file.
@@ -242,7 +242,8 @@ class VsopLexer():
 
   @TOKEN(r'\\\n\ *')
   def t_string_break(self, t):
-    self.last_lf_lexpos = t.lexpos + 1
+
+    self.line_lexpos_array.append(t.lexpos + 1)
     t.lexer.lineno += 1
 
   @TOKEN(r'\\x' + hex_digit + hex_digit)
@@ -288,21 +289,21 @@ class VsopLexer():
 ### LINE FEED
   def t_newline(self, t):
     r'\n'
-    self.last_lf_lexpos = t.lexpos
+    self.line_lexpos_array.append(t.lexpos)
     t.lexer.lineno += 1
 
   def t_string_newline(self, t):
     r'\n'
     line = t.lexer.lineno
     column = self.find_column(t)
-    self.last_lf_lexpos = t.lexpos
+    self.line_lexpos_array.append(t.lexpos)
     t.lexer.lineno += 1
     self.errors.append(LexicalError(line, column,
       "Invalid raw line feed in string literal"))
 
   def t_comment_newline(self, t):
     r'\n'
-    self.last_lf_lexpos = t.lexpos
+    self.line_lexpos_array.append(t.lexpos)
     t.lexer.lineno += 1
 
 
