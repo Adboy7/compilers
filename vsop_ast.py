@@ -13,7 +13,7 @@
 #
 # -----------------------------------------------------------------------------
 __author__  = "Adrien and Kevin"
-__version__ = '1.0'
+__version__ = '2.0'
 
 class Node:
   # TODO ajouter position au parse
@@ -43,7 +43,9 @@ class Class(Node):
     self.column= column
     self.parent_lineno = parent_lineno
     self.parent_column = parent_column
-
+    self.inhe_fields=None
+    self.inhe_methods=None
+    self.redef_methods=[]
    
   def __str__(self):
     return f"Class({self.name}, " \

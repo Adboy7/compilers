@@ -87,7 +87,6 @@ class VsopParser:
     '''class_body : class_body field
                   | class_body method
                   | '''
-    
     if len(p) == 1:
         p[0] = [[], []]
     else:
@@ -100,7 +99,6 @@ class VsopParser:
   def p_field(self, p):
     '''field : object_identifier colon type semicolon
              | object_identifier colon type assign expression semicolon'''
-    
     if len(p) == 7:
       p[0] = Field(p[1], p[3], p.lineno(1), self.find_column(p, 1), p[5])
 
@@ -140,6 +138,7 @@ class VsopParser:
 
   def p_block(self,p):
     '''block : lbrace expressions rbrace '''
+    
     p[0] = p[2]
 
   def p_expressions(self, p):
@@ -275,7 +274,7 @@ class VsopParser:
   def p_field_error_missing_type(self, p):
     '''field : object_identifier error semicolon
              | object_identifier error assign expression semicolon'''
-    self.handle_error("Missing field type")
+    self.handle_error("Missing or incorrect type")
 
   ## To much work for the moment, so we will handle errors better later
   ## For now, we know to handle them but the default handler will do the job
