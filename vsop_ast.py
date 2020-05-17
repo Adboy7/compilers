@@ -16,9 +16,8 @@ __author__  = "Adrien and Kevin"
 __version__ = '2.0'
 
 class Node:
-  # TODO ajouter position au parse
-  def __init__(self, line, column):
-    self.line = line
+  def __init__(self, lineno, column):
+    self.line = lineno
     self.column = column
 
 
@@ -30,7 +29,13 @@ class Program(Node):
     self.list_class.append(cl)
 
   def __str__(self):
-    return f"[" + ", ".join([str(x) for x in self.list_class]) + "]"
+    if(isinstance(self.list_class, dict)):
+      list_without_object=self.list_class.copy()
+      del list_without_object['Object']
+      return f"[" + ", ".join([str(x) for key,x in list_without_object.items()]) + "]"
+    
+    else:
+      return f"[" + ", ".join([str(x) for x in self.list_class]) + "]"
 
 
 class Class(Node):
@@ -45,13 +50,19 @@ class Class(Node):
     self.parent_column = parent_column
     self.inhe_fields=None
     self.inhe_methods=None
-    self.redef_methods=[]
+    self.all_parents=[]
    
   def __str__(self):
-    return f"Class({self.name}, " \
+    if isinstance(self.fields, dict) and isinstance(self.methods, dict):
+      return f"Class({self.name}, " \
            f"{self.parent}, " \
-           f"[{', '.join([str(x) for x in self.fields])}], " \
-           f"[{', '.join([str(x) for x in self.methods])}])"
+           f"[{', '.join([str(x) for key,x in self.fields.items()])}], " \
+           f"[{', '.join([str(x) for key,x in self.methods.items()])}])"
+    else:
+      return f"Class({self.name}, " \
+            f"{self.parent}, " \
+            f"[{', '.join([str(x) for x in self.fields])}], " \
+            f"[{', '.join([str(x) for x in self.methods])}])"
 
 
 class Field(Node):
@@ -76,34 +87,25 @@ class Field(Node):
 
 
 class Method(Node):
-  def __init__(self, name, formals, ret_type, lineno, column, block=[]):
+  def __init__(self, name, formals, ret_type, lineno, column, block):
     self.name = name
     self.formals = formals
     self.ret_type = ret_type
     self.block = block
     self.lineno = lineno
     self.column = column
-
   def __str__(self):
-    if isinstance(self.block, list) and len(self.block) > 1:
-      block = f"[{', '.join([str(x) for x in self.block])}]"
-    elif isinstance(self.block, list) and len(self.block):
-      block = str(self.block[0])
-    else:
-      block = self.block
-    return f"Method({self.name}, " \
-           f"[{', '.join([str(x) for x in self.formals])}], " \
+    if isinstance(self.formals,dict):
+      return f"Method({self.name}, " \
+           f"[{', '.join([str(x) for key,x in self.formals.items()])}], " \
            f"{self.ret_type}, " \
-           f"{block})"
+           f"{self.block})"
+    else:
+      return f"Method({self.name}, " \
+            f"[{', '.join([str(x) for x in self.formals])}], " \
+            f"{self.ret_type}, " \
+            f"{self.block})"
 
-
-# Useless
-class Type(Node):
-  def __init__(self, type):
-    self.type = type
-
-  def __str__(self):
-    return f"{self.type}"
 
 
 class Formal(Node):
@@ -182,13 +184,23 @@ class While(Node):
 
     return f"While({cond_expr}, {body_expr})"
 
-
-class Let(Node):
-  def __init__(self, name, type, scope_expr, lineno, column, init_expr=None):
+class Local_variable(Node):
+  def __init__(self, name, type, init_expr, lineno, column):
     self.name = name
     self.type = type
-    self.scope_expr = scope_expr
     self.init_expr = init_expr
+    self.lineno = lineno
+    self.column = column
+
+  def __str__(self):
+    return f"{self.name}, "\
+           f"{self.type}" \
+           f"{', ' + str(self.init_expr) if self.init_expr else ''}, " 
+    
+class Let(Node):
+  def __init__(self, name, type, scope_expr, lineno, column,lineno_lv,column_lv,init_expr=None):
+    self.local_var= Local_variable(name,type,init_expr,lineno_lv,column_lv)
+    self.scope_expr = scope_expr
     self.lineno = lineno
     self.column = column
 
@@ -199,53 +211,63 @@ class Let(Node):
       scope_expr = str(self.scope_expr[0])
     else:
       scope_expr = self.scope_expr
-    return f"Let({self.name}, " \
-           f"{self.type}{', ' + str(self.init_expr) if self.init_expr else ''}, " \
+    return f"Let({self.local_var}, "\
            f"{scope_expr})"
 
 
 class Assign(Node):
-  def __init__(self, name, expr):
-    self.name = name
+  def __init__(self, name, expr,lineno,column):
+    if isinstance(name, str):
+      self.id = Object_identifier(name,lineno,column)
+    else:
+      self.id = name
+
     self.expr = expr
-  
+    self.lineno = lineno
+    self.column = column
   def __str__(self):
-    return f"Assign({self.name}, {self.expr})"
+    return f"Assign({self.id.name}, {self.expr})"
 
 
 class UnOp(Node):
-  def __init__(self, op, expr):
+  def __init__(self, op, expr,lineno,column):
     self.op = op
     self.expr = expr
+    self.lineno = lineno
+    self.column = column
 
   def __str__(self):
     return f"UnOp({self.op}, {self.expr})"
 
 
 class BinOp(Node):
-  def __init__(self, op, left_expr, right_expr):
+  def __init__(self, op, left_expr, right_expr,lineno,column):
     self.op = op
     self.left_expr = left_expr
     self.right_expr = right_expr
+    self.lineno = lineno
+    self.column = column
 
   def __str__(self):
     return f"BinOp({self.op}, {self.left_expr}, {self.right_expr})"
 
 
 class Call(Node):
-  def __init__(self, method_name, expr_list=[], obj_expr="self"):
+  def __init__(self, method_name, lineno, column ,arg=[], obj_expr="self"):
     self.obj_expr = obj_expr
     self.method_name = method_name
-    self.expr_list = expr_list
+    self.arg = arg
+    self.lineno= lineno
+    self.column= column
 
   def __str__(self):
-    if isinstance(self.expr_list, list):
-      expr_list = f"[{', '.join([str(x) for x in self.expr_list])}]"
+    if isinstance(self.arg, list):
+      arg = f"[{', '.join([str(x) for x in self.arg])}]"
     else:
-      expr_list = f"[{self.expr_list}]"
+      arg = f"[{self.arg}]"
     return f"Call({self.obj_expr}, " \
            f"{self.method_name}, " \
-           f"{expr_list})"
+           f"{arg})"
 
 
 class New(Node):
@@ -255,10 +277,11 @@ class New(Node):
   def __str__(self):
     return f"New({self.type_name})"
 
-
 class Literal(Node):
-  def __init__(self, literal):
+  def __init__(self, literal,lineno, column):
     self.literal = literal
+    self.lineno = lineno
+    self.column = column
 
   def __str__(self):
     return str(self.literal)
@@ -270,4 +293,18 @@ class Object_identifier(Node):
     self.column = column
 
   def __str__(self):
-    return str(self.name)
+    return self.name
+
+class Block(Node):
+  def __init__(self, block, lineno, column):
+    self.block = block
+    self.lineno = lineno
+    self.column = column
+
+  def __str__(self):
+    if isinstance(self.block, list) and len(self.block) > 1:
+      return f"[{', '.join([str(x) for x in self.block])}]"
+    elif isinstance(self.block, list) and len(self.block):
+      return str(self.block[0])
+    else:
+      return self.block

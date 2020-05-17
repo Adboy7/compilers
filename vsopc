@@ -62,6 +62,8 @@ def main(argv):
             mode = 2
         elif arg in ("-check"):
             mode = 3
+        elif arg in ("-llvm"):
+            mode = 4
         else:
             files.append(arg)
 
@@ -104,7 +106,14 @@ def main(argv):
                 analysed, sem_errors = sem_analyser.semantic_analysis(prog)
                 for e in sem_errors:
                     print(f"{f}:{e}", file=sys.stderr)
-                # print(analysed)
+                if sem_errors:
+                    exit(1)
+                if mode == 3:
+                    print(analysed)
+            if mode == 4:
+                print("Not implemented")
+            
+                
 
 
 if __name__ == "__main__":

@@ -107,7 +107,6 @@ class VsopParser:
 
   def p_method(self, p):
     '''method : object_identifier lpar formals rpar colon type block'''
-
     p[0] = Method(p[1], p[3], p[6], p.lineno(1), self.find_column(p, 1),p[7])
 
   def p_type(self, p):
@@ -138,8 +137,7 @@ class VsopParser:
 
   def p_block(self,p):
     '''block : lbrace expressions rbrace '''
-    
-    p[0] = p[2]
+    p[0] = Block(p[2], p.lineno(2), self.find_column(p, 2))
 
   def p_expressions(self, p):
     '''expressions : expression
@@ -161,7 +159,7 @@ class VsopParser:
       
       
     else:
-      p[0] = If(p[2], p[4], p.lineno(1), p.lexpos(1)-self.lexer.line_lexpos_array,[p.lineno(1)-1], p[6])
+      p[0] = If(p[2], p[4], p.lineno(1), self.find_column(p, 1), p[6])
       
 
   def p_expression_while(self, p):
@@ -173,19 +171,19 @@ class VsopParser:
                   | let object_identifier colon type assign expression in expression'''
 
     if len(p) == 7:
-      p[0] = Let(p[2], p[4], p[6], p.lineno(1), self.find_column(p, 1))
+      p[0] = Let(p[2], p[4], p[6], p.lineno(1), self.find_column(p, 1),p.lineno(2), self.find_column(p, 2))
     else:
-      p[0] = Let(p[2], p[4], p[8], p.lineno(1), self.find_column(p, 1), p[6])
+      p[0] = Let(p[2], p[4], p[8], p.lineno(1), self.find_column(p, 1), p.lineno(2), self.find_column(p, 2),p[6])
   
   def p_expression_assign(self, p):
     'expression : object_identifier assign expression'
-    p[0] = Assign(p[1], p[3])
+    p[0] = Assign(p[1], p[3],p.lineno(1), self.find_column(p, 1))
 
   def p_expression_unop(self, p):
     '''expression : not expression
                   | minus expression %prec unary_minus
                   | isnull expression'''
-    p[0] = UnOp(p[1], p[2])
+    p[0] = UnOp(p[1], p[2],p.lineno(1), self.find_column(p, 1))
 
   def p_expression_binop(self, p):
     '''expression : expression and expression
@@ -197,16 +195,15 @@ class VsopParser:
             | expression times expression
             | expression div expression
             | expression pow expression'''
-
-    p[0] = BinOp(p[2], p[1], p[3])
+    p[0] = BinOp(p[2], p[1], p[3],p.lineno(2), self.find_column(p, 2))
 
   def p_expression_call(self, p):
     '''expression : object_identifier lpar args rpar
                   | expression dot object_identifier lpar args rpar'''
     if len(p) == 5:
-      p[0] = Call(p[1], p[3])
+      p[0] = Call(p[1],p.lineno(1), self.find_column(p, 1), p[3])
     else:
-      p[0] = Call(p[3], p[5], p[1])
+      p[0] = Call(p[3], p.lineno(3), self.find_column(p, 3),p[5], p[1])
 
   def p_args(self,p):
     '''args : expression 
@@ -227,16 +224,16 @@ class VsopParser:
     '''literal : integer_literal
                | string_literal
                | boolean_literal'''
-    p[0] = Literal(p[1])
+    p[0] = Literal(p[1],p.lineno(1), self.find_column(p, 1))
 
   def p_boolean_literal(self,p):
     '''boolean_literal : true 
                        | false'''
-    p[0] = Literal(p[1])
+    p[0] = Literal(p[1],p.lineno(1), self.find_column(p, 1))
 
   def p_expression_unit(self, p):
     '''expression : lpar rpar'''
-    p[0] = Literal("()")
+    p[0] = Literal("()",p.lineno(1), self.find_column(p, 1))
 
   def p_expression_par(self, p):
     '''expression : lpar expression rpar'''
