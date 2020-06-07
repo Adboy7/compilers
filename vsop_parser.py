@@ -15,8 +15,10 @@
 #   v1.0: original
 #
 # -----------------------------------------------------------------------------
-__author__  = "Adrien and Kevin"
-__version__ = '1.0'
+# __author__  = "Adrien and Kevin"
+# __version__ = '1.0'
+__author__  = "Adrien"
+__version__ = '2.0'
 
 import ply.lex as lex
 import ply.yacc as yacc
@@ -273,8 +275,6 @@ class VsopParser:
              | object_identifier error assign expression semicolon'''
     self.handle_error("Missing or incorrect type")
 
-  ## To much work for the moment, so we will handle errors better later
-  ## For now, we know to handle them but the default handler will do the job
 
   def p_error(self, p):
     if not p:

@@ -16,8 +16,10 @@
 #   v2.1: add token and input methods
 #
 # -----------------------------------------------------------------------------
-__author__  = "Adrien and Kevin"
-__version__ = '2.1'
+# __author__  = "Adrien and Kevin"
+# __version__ = '2.1'
+__author__  = "Adrien"
+__version__ = '3.0'
 
 import ply.lex as lex
 from ply.lex import TOKEN

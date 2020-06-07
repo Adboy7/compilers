@@ -12,8 +12,11 @@
 # so almost all nodes have the same format rule
 #
 # -----------------------------------------------------------------------------
-__author__  = "Adrien and Kevin"
-__version__ = '2.0'
+# __author__  = "Adrien and Kevin"
+# __version__ = '2.0'
+__author__  = "Adrien"
+__version__ = '3.0'
+
 
 class Node:
   def __init__(self, lineno, column):
@@ -94,6 +97,7 @@ class Method(Node):
     self.block = block
     self.lineno = lineno
     self.column = column
+    
   def __str__(self):
     if isinstance(self.formals,dict):
       return f"Method({self.name}, " \
@@ -194,8 +198,8 @@ class Local_variable(Node):
 
   def __str__(self):
     return f"{self.name}, "\
-           f"{self.type}" \
-           f"{', ' + str(self.init_expr) if self.init_expr else ''}, " 
+           f"{self.type} " \
+           f"{', ' + str(self.init_expr) if self.init_expr else ''} " 
     
 class Let(Node):
   def __init__(self, name, type, scope_expr, lineno, column,lineno_lv,column_lv,init_expr=None):

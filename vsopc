@@ -8,10 +8,11 @@
 #   v1.0: original
 #   v2.0: handle parser
 #
-# -----------------------------------------------------------------------------
-
-__author__  = "Adrien and Kevin"
-__version__ = '2.0'
+# ----------------------------------------------------------------------------
+# __author__  = "Adrien and Kevin"
+# __version__ = '2.0'
+__author__  = "Adrien"
+__version__ = '3.0'
 
 import sys
 from vsop_lexer import VsopLexer, LexicalError

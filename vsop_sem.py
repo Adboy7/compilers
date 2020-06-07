@@ -9,11 +9,12 @@
 #   v1.0: original
 #
 # -----------------------------------------------------------------------------
-__author__  = "Adrien and Kevin"
+# __author__  = "Adrien and Kevin"
+# __version__ = '1.0'
+
+__author__  = "Adrien"
 __version__ = '2.0'
 
-# TODO réfléchir comment ajouter l'annotation
-# TODO recup ligne et colonne
 
 from vsop_ast import *
 import copy
@@ -56,7 +57,7 @@ class VsopSem:
 
     return self.program, self.errors
 
-
+  # 1PASSE
   def check_redefine_and_main(self):
     # check redefine
     cl_object = self.create_object_class()
@@ -95,7 +96,8 @@ class VsopSem:
     methods.append(Method('inputBool',[],'bool',0,0,Block([],0,0)))
     methods.append(Method('inputInt32',[],'int32',0,0,Block([],0,0)))
     return Class('Object',None,methods,0,0,None)
-
+  
+  #2 PASSE
   def check_inheritance(self):
     
     class_checked = []
@@ -123,7 +125,7 @@ class VsopSem:
           already_seen.append(child_name)
 
 
-
+  #3PASSE
   def check_and_handle_inheritance_fields_and_methods_loop(self):
     for key, cl in self.program.list_class.items():
       self.check_and_handle_inheritance_fields_and_methods(cl)
@@ -257,6 +259,9 @@ class VsopSem:
       
       cl.methods=method_already_seen          
 
+
+
+  #4 passe
   def check_fields_and_methods_type(self):
     for key,cl in self.program.list_class.items():
       self.check_field_type(cl)
